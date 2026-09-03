@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Leads — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-topbar">
+      <a href="/dashboard.html" class="brand" style="font-size:16px;">← <span class="brand-mark" style="width:26px;height:26px;font-size:13px;">S</span>Sieve</a>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm" data-logout>Log out</button>
+      </div>
+    </div>
+    <main class="app-main">
+      <div class="page-head">
+        <h1 id="sc-title">Leads</h1>
+        <a class="btn btn-ghost" id="export-btn" href="#">Export CSV</a>
+      </div>
+      <div id="content"><p style="color:var(--ink-faint);">Loading…</p></div>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const scorecardId = params.get('id');
+    if (!scorecardId) window.location.href = '/dashboard.html';
+
+    (async () => {
+      const user = await requireUser();
+      if (!user) return;
+
+      const { scorecard } = await api(`/scorecards/${scorecardId}`);
+      document.getElementById('sc-title').textContent = `Leads — ${scorecard.title}`;
+      document.getElementById('export-btn').href = `/api/scorecards/${scorecardId}/leads.csv`;
+
+      const { leads } = await api(`/scorecards/${scorecardId}/leads`);
+      const content = document.getElementById('content');
+
+      if (!leads.length) {
+        content.innerHTML = `<div class="empty-state"><h3>No leads yet</h3><p>Once someone takes this scorecard, they'll show up here.</p></div>`;
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="leads-table-wrap">
+          <table class="leads">
+            <thead><tr><th>Name</th><th>Business</th><th>Email</th><th>Score</th><th>Tier</th><th>Date</th></tr></thead>
+            <tbody>
+              ${leads.map(l => `
+                <tr>
+                  <td>${escapeHtml([l.firstName, l.lastName].filter(Boolean).join(' ') || '—')}</td>
+                  <td>${escapeHtml(l.businessName || '—')}</td>
+                  <td>${escapeHtml(l.email || '—')}</td>
+                  <td><strong>${l.overallScore}%</strong></td>
+                  <td><span class="tier-pill">${escapeHtml(l.tier)}</span></td>
+                  <td>${new Date(l.createdAt).toLocaleDateString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+      function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    })();
+  </script>
+</body>
+</html>

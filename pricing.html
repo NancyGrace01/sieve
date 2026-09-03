@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pricing — Plans in Naira | Sieve</title>
+<meta name="description" content="Naira pricing for Sieve — pay with response credits, per qualified lead, or a flat monthly subscription. Billed via Paystack or Flutterwave. Free to start, no card required." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a href="index.html" class="brand"><span class="brand-mark">S</span>Sieve</a>
+    <ul class="nav-links">
+      <li><a href="features.html">Features</a></li>
+      <li><a href="how-it-works.html">How It Works</a></li>
+      <li><a href="use-cases.html">Use Cases</a></li>
+      <li><a href="templates.html">Templates</a></li>
+      <li><a href="demo.html">Live Demo</a></li>
+      <li><a href="pricing.html" class="active">Pricing</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="pricing.html" class="btn btn-ghost btn-sm">Login</a>
+      <a href="demo.html" class="btn btn-primary btn-sm">Get started free</a>
+    </div>
+    <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero" style="padding-bottom:20px;">
+    <div class="container">
+      <div class="eyebrow"><span class="dot"></span> Pricing</div>
+      <h1 style="font-size:clamp(2.2rem,4.4vw,3.2rem);">Pay however works for your business</h1>
+      <p class="hero-sub">Top up response credits, pay only for each qualified lead, or take a flat monthly plan — all billed in Naira via Paystack or Flutterwave, no foreign card needed.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:20px;">
+    <div class="container">
+
+      <div class="pay-tabs">
+        <button class="pay-tab active" data-target="pay-credits">Credits</button>
+        <button class="pay-tab" data-target="pay-cpl">Pay-per-lead</button>
+        <button class="pay-tab" data-target="pay-subscription">Subscription</button>
+      </div>
+      <p class="pay-tab-note">Switch your account between these anytime from Billing — no need to pick for good today.</p>
+
+      <div id="pay-credits" class="pay-panel active">
+        <div class="bundle-grid">
+
+          <div class="bundle-card">
+            <div class="plan-name">Starter bundle</div>
+            <div class="bundle-credits">100 credits</div>
+            <div class="bundle-price"><span class="naira">₦</span>12,000</div>
+            <div class="bundle-per">₦120 per response, never expires</div>
+            <div class="bundle-cta"><a href="demo.html" class="btn btn-ghost btn-block">Get started free</a></div>
+          </div>
+
+          <div class="bundle-card is-best">
+            <div class="bundle-badge">Most Popular</div>
+            <div class="plan-name">Growth bundle</div>
+            <div class="bundle-credits">500 credits</div>
+            <div class="bundle-price"><span class="naira">₦</span>50,000</div>
+            <div class="bundle-per">₦100 per response, never expires</div>
+            <div class="bundle-cta"><a href="demo.html" class="btn btn-accent btn-block">Get started free</a></div>
+          </div>
+
+          <div class="bundle-card">
+            <div class="bundle-badge">Best Value</div>
+            <div class="plan-name">Scale bundle</div>
+            <div class="bundle-credits">2,000 credits</div>
+            <div class="bundle-price"><span class="naira">₦</span>160,000</div>
+            <div class="bundle-per">₦80 per response, never expires</div>
+            <div class="bundle-cta"><a href="demo.html" class="btn btn-ghost btn-block">Get started free</a></div>
+          </div>
+
+        </div>
+        <p class="sub-panel-note" style="margin-top:32px;">Top up once, no recurring charge. 1 credit = 1 person who actually completes a scorecard — buy more whenever the balance runs low.</p>
+      </div>
+
+      <div id="pay-cpl" class="pay-panel">
+        <div class="cpl-card">
+          <div class="eyebrow" style="justify-content:center;"><span class="dot"></span> No upfront spend</div>
+          <div class="cpl-rate"><span class="naira">₦</span>150 <small>per qualified lead</small></div>
+          <p class="cpl-note">Save a card once (a small ₦100 verification charge) and pay only for each qualified lead a scorecard actually produces — billed automatically the moment they submit.</p>
+          <ul class="cpl-features">
+            <li>Nothing to pay until a real lead comes in</li>
+            <li>Billed instantly, per response, in real time</li>
+            <li>Never blocks a visitor already mid-quiz</li>
+            <li>Switch to Credits or Subscription anytime</li>
+          </ul>
+          <div class="plan-cta"><a href="demo.html" class="btn btn-accent btn-block">Get started free</a></div>
+        </div>
+      </div>
+
+      <div id="pay-subscription" class="pay-panel">
+        <p class="sub-panel-note">Secondary option — a flat monthly fee regardless of how many leads come in. Most Nigerian businesses prefer Credits or Pay-per-lead above, but Subscription is still here if a predictable bill suits you better.</p>
+
+        <div class="pricing-toggle">
+          <span style="font-weight:700;font-size:14px;">Monthly</span>
+          <button class="toggle-pill" aria-label="Toggle yearly pricing"></button>
+          <span style="font-weight:700;font-size:14px;">Yearly <span class="save-badge">Save 25%</span></span>
+        </div>
+
+        <div class="pricing-grid">
+
+          <div class="plan">
+            <div class="plan-name">Starter</div>
+            <div class="plan-desc">Everything you need to start</div>
+            <div class="plan-price"><span class="naira">₦</span><span data-monthly="25,000" data-yearly="18,750">25,000</span><small>/mo</small></div>
+            <div class="plan-period period-label">billed monthly</div>
+            <div class="plan-cta"><a href="#" class="btn btn-ghost btn-block">Get Starter</a></div>
+            <ul class="plan-features">
+              <li>3 live scorecards</li>
+              <li>100 responses per month</li>
+              <li>1 user</li>
+              <li>Unlimited landing pages</li>
+              <li>Dynamic result pages</li>
+              <li>Export all response data</li>
+              <li>Paystack / Flutterwave checkout</li>
+            </ul>
+          </div>
+
+          <div class="plan is-best">
+            <div class="plan-badge">Best Value</div>
+            <div class="plan-name">Business</div>
+            <div class="plan-desc">Best for growing teams</div>
+            <div class="plan-price"><span class="naira">₦</span><span data-monthly="65,000" data-yearly="48,750">65,000</span><small>/mo</small></div>
+            <div class="plan-period period-label">billed monthly</div>
+            <div class="plan-cta"><a href="#" class="btn btn-accent btn-block">Get Business</a></div>
+            <ul class="plan-features">
+              <li>10 live scorecards</li>
+              <li>1,000 responses per month</li>
+              <li>3 users</li>
+              <li>Everything in Starter</li>
+              <li>Use your own domain</li>
+              <li>Abandoned-quiz WhatsApp/email nudge</li>
+              <li>Advanced insights</li>
+              <li>Custom CSS / scripts</li>
+              <li>Dynamic PDF report</li>
+            </ul>
+          </div>
+
+          <div class="plan">
+            <div class="plan-name">Pro</div>
+            <div class="plan-desc">Advanced features for making sales</div>
+            <div class="plan-price"><span class="naira">₦</span><span data-monthly="95,000" data-yearly="71,250">95,000</span><small>/mo</small></div>
+            <div class="plan-period period-label">billed monthly</div>
+            <div class="plan-cta"><a href="#" class="btn btn-ghost btn-block">Get Pro</a></div>
+            <ul class="plan-features">
+              <li>30 live scorecards</li>
+              <li>3,000 responses per month</li>
+              <li>5 users</li>
+              <li>Everything in Business</li>
+              <li>Lead data enrichment</li>
+              <li>Split testing</li>
+            </ul>
+          </div>
+
+          <div class="plan">
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-desc">Scale up as required, tailored plans</div>
+            <div class="plan-price"><span class="naira">₦</span>450,000<small> from</small></div>
+            <div class="plan-period period-label">billed monthly</div>
+            <div class="plan-cta"><a href="#" class="btn btn-ghost btn-block">Talk to Sales</a></div>
+            <ul class="plan-features">
+              <li>Infinitely scalable</li>
+              <li>Seats for everyone</li>
+              <li>VIP support</li>
+              <li>Tailored onboarding</li>
+              <li>Granular permissions</li>
+              <li>SSO</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="grid-3 mt-48">
+        <div class="card text-center"><h3>No Lock-in</h3><p>Switch between Credits, Pay-per-lead, and Subscription anytime — nothing you pick today is permanent.</p></div>
+        <div class="card text-center"><h3>Paystack &amp; Flutterwave</h3><p>Pay by card, bank transfer, or USSD — all processed securely, no foreign currency needed.</p></div>
+        <div class="card text-center"><h3>Free to start</h3><p>Build and publish your first scorecard for free, no card required, before you pay for anything.</p></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section section-sunk">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">FAQ</span>
+        <h2>Pricing questions</h2>
+      </div>
+      <div class="faq">
+        <div class="faq-item open">
+          <button class="faq-q">Do I have to subscribe monthly? <span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">No. Subscription is only one of three ways to pay. Most Nigerian businesses on Sieve use Credits (top up once, spend it down as leads come in) or Pay-per-lead (no upfront spend at all — pay only for each qualified lead). Pick whichever fits how your business actually spends.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Do I need a foreign card to pay? <span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">No. All three billing modes are charged in Naira through Paystack or Flutterwave — pay by local card, bank transfer, or USSD.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Can I switch how I pay later? <span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">Yes — switch between Credits, Pay-per-lead, and Subscription anytime from your Billing page. Nothing you pick today locks you in.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Is there really a free plan? <span class="plus">+</span></button>
+          <div class="faq-a"><div class="faq-a-inner">Yes — you can build and publish your first scorecard for free, no card required, to see the full mechanism before you pay for anything.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="cta-banner">
+        <h2>Start qualifying every lead</h2>
+        <p>Create your first scorecard and discover who's a fit, who's ready, and how to personalise every next step.</p>
+        <div class="hero-ctas"><a href="demo.html" class="btn btn-accent">Get started for free</a></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="brand"><span class="brand-mark">S</span>Sieve</a>
+        <p>Qualify leads. Know who's ready. Built for the Nigerian market, priced in Naira.</p>
+      </div>
+      <div class="footer-col"><h4>Product</h4>
+        <a href="features.html">Features</a>
+        <a href="how-it-works.html">How It Works</a>
+        <a href="demo.html">Live Demo</a>
+      </div>
+      <div class="footer-col"><h4>Explore</h4>
+        <a href="use-cases.html">Use Cases</a>
+        <a href="templates.html">Templates</a>
+        <a href="pricing.html">Pricing</a>
+      </div>
+      <div class="footer-col"><h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Partner Directory</a>
+        <a href="#">Support Centre</a>
+      </div>
+      <div class="footer-col"><h4>Legal</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Sieve. All rights reserved.</span>
+      <span>Made for Nigerian business.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+**/node_modules
+app/server/data
+app/server/.env
+app/server/test/.tmp-*.db
+.git

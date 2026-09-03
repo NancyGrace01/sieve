@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign up — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+<script src="/scorecard-templates.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header">
+      <nav class="nav">
+        <a href="/index.html" class="brand"><span class="brand-mark">S</span>Sieve</a>
+      </nav>
+    </header>
+    <div class="app-narrow">
+      <div class="auth-card">
+        <h1 style="font-size:1.6rem;margin-bottom:6px;">Create your account</h1>
+        <p style="color:var(--ink-soft);font-size:14.5px;margin-bottom:24px;" id="signup-sub">Free plan, no card required — build your first scorecard in minutes.</p>
+        <div class="form-error" id="err"></div>
+        <form id="signup-form">
+          <div class="field"><label>Business name</label><input type="text" id="businessName" required /></div>
+          <div class="field"><label>Work email</label><input type="email" id="email" required /></div>
+          <div class="field"><label>Password</label><input type="password" id="password" minlength="8" required /></div>
+          <button class="btn btn-accent btn-block" type="submit">Create account</button>
+        </form>
+        <div class="auth-switch">Already have an account? <a href="/login.html">Log in</a></div>
+      </div>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    const err = document.getElementById('err');
+    const params = new URLSearchParams(location.search);
+    const templateSlug = params.get('template');
+    const chosenTemplate = templateSlug && window.SIEVE_TEMPLATES ? window.SIEVE_TEMPLATES[templateSlug] : null;
+    if (chosenTemplate) {
+      document.getElementById('signup-sub').textContent = `You'll start with the "${chosenTemplate.title}" template — free plan, no card required.`;
+    }
+
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError(err);
+      try {
+        await api('/auth/signup', {
+          method: 'POST',
+          body: {
+            businessName: document.getElementById('businessName').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          },
+        });
+        if (chosenTemplate) {
+          const id = await createScorecardFromTemplate(chosenTemplate);
+          window.location.href = `/builder.html?id=${id}`;
+          return;
+        }
+        window.location.href = '/dashboard.html';
+      } catch (ex) {
+        showError(err, ex.message);
+      }
+    });
+  </script>
+</body>
+</html>

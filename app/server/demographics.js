@@ -1,0 +1,50 @@
+// Fixed option lists for audience-profile capture (Brand Campaign Insight
+// Reporting). Fixed, not free-text, so aggregation in the report is clean —
+// "Lagos" and "lagos state" never end up as two different bars on a chart.
+
+const AGE_RANGES = ['Under 18', '18-24', '25-34', '35-44', '45-54', '55+'];
+
+const GENDERS = ['Male', 'Female', 'Prefer not to say'];
+
+// Phrased as everyday income brackets, not research jargon (SEC A/B/C/D/E),
+// since these are answered by an ordinary respondent, not a market researcher.
+const SOCIAL_CLASSES = ['High income', 'Upper middle income', 'Middle income', 'Lower income', 'Prefer not to say'];
+
+const LOCATIONS = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT (Abuja)', 'Gombe',
+  'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto',
+  'Taraba', 'Yobe', 'Zamfara', 'Outside Nigeria',
+];
+
+// Normalizes a profile_capture JSON blob into the full, always-complete shape.
+// The column's own DB default is just '{"enabled":false}' — a scorecard that
+// was created but never saved through the builder has exactly that, missing
+// every other key — so every reader needs this, not just the PUT writer.
+function sanitizeProfileCapture(input) {
+  const pc = input && typeof input === 'object' ? input : {};
+  return {
+    enabled: !!pc.enabled,
+    captureAge: !!pc.captureAge,
+    captureGender: !!pc.captureGender,
+    captureLocation: !!pc.captureLocation,
+    captureSocialClass: !!pc.captureSocialClass,
+    interestQuestion: String(pc.interestQuestion || '').trim().slice(0, 200),
+    interestOptions: Array.isArray(pc.interestOptions)
+      ? pc.interestOptions.map(o => String(o).trim()).filter(Boolean).slice(0, 12)
+      : [],
+  };
+}
+
+function parseProfileCapture(rawJson) {
+  let parsed;
+  try {
+    parsed = JSON.parse(rawJson || '{"enabled":false}');
+  } catch {
+    parsed = {};
+  }
+  return sanitizeProfileCapture(parsed);
+}
+
+module.exports = { AGE_RANGES, GENDERS, SOCIAL_CLASSES, LOCATIONS, sanitizeProfileCapture, parseProfileCapture };

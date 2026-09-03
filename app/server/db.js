@@ -1,0 +1,211 @@
+// Postgres database layer (replaces the earlier node:sqlite version). Every
+// route still calls the same run()/get()/all() shapes — the only real change
+// a caller needs to make is `await` in front of each call, because a real
+// network database is inherently asynchronous (SQLite's DatabaseSync was not).
+//
+// Callers still write `?` placeholders exactly as before (SQLite style) —
+// toPgPlaceholders() below rewrites them to Postgres's $1/$2/... style, so no
+// route file needs its SQL strings rewritten, only its call sites awaited.
+//
+// Column types deliberately mirror the old SQLite schema as closely as
+// possible (JSON blobs stay TEXT, booleans stay INTEGER 0/1) rather than
+// adopting native JSONB/BOOLEAN — that's a real, separate improvement for
+// later, once route code is ready to stop JSON.stringify/parse-ing those
+// columns itself. Doing both at once would make this change much riskier to
+// verify. See MIGRATION_NOTES.md.
+
+const { Pool } = require('pg');
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error(
+    'DATABASE_URL is not set. Add it to app/server/.env — see .env.example. ' +
+    'Local dev: run a Postgres instance (Docker: `docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16`) ' +
+    'and set DATABASE_URL=postgres://postgres:postgres@localhost:5432/sieve — or point it at a free managed instance ' +
+    '(Neon, Railway, Supabase) for zero local setup.'
+  );
+}
+
+// Managed Postgres providers (Neon, Railway, Supabase, Render) require SSL and
+// hand out a certificate that Node's default trust store doesn't chain to
+// cleanly. rejectUnauthorized:false is the standard pragmatic setting for
+// these providers' pooled connection strings — the connection is still
+// encrypted, this only skips CA-chain verification. Set PGSSL=disable for a
+// local, non-SSL Postgres instance (e.g. the Docker command above).
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false },
+});
+
+pool.on('error', (err) => {
+  // Fires for errors on idle clients in the pool (e.g. the server restarting
+  // underneath us) — log, don't crash the whole process over one bad connection.
+  console.error('[db] Unexpected error on idle Postgres client:', err);
+});
+
+function toPgPlaceholders(sql) {
+  let n = 0;
+  return sql.replace(/\?/g, () => `$${++n}`);
+}
+
+async function run(sql, params = []) {
+  const result = await pool.query(toPgPlaceholders(sql), params);
+  return { changes: result.rowCount, rows: result.rows };
+}
+
+async function get(sql, params = []) {
+  const result = await pool.query(toPgPlaceholders(sql), params);
+  return result.rows[0];
+}
+
+async function all(sql, params = []) {
+  const result = await pool.query(toPgPlaceholders(sql), params);
+  return result.rows;
+}
+
+async function migrate() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      business_name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      plan TEXT NOT NULL DEFAULT 'free',
+      billing_mode TEXT NOT NULL DEFAULT 'subscription',
+      credit_balance INTEGER NOT NULL DEFAULT 0,
+      cpl_rate_kobo INTEGER,
+      paystack_authorization_code TEXT,
+      paystack_customer_code TEXT,
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS scorecards (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      slug TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL DEFAULT 'Untitled scorecard',
+      intro TEXT NOT NULL DEFAULT '',
+      categories TEXT NOT NULL DEFAULT '[]',
+      questions TEXT NOT NULL DEFAULT '[]',
+      tiers TEXT NOT NULL DEFAULT '[{"min":75,"label":"Sales-ready"},{"min":50,"label":"Getting there"},{"min":0,"label":"Building the basics"}]',
+      brand_name TEXT,
+      -- JSON: {enabled, captureAge, captureGender, captureLocation, captureSocialClass,
+      -- interestQuestion, interestOptions:[]} — powers the Brand Campaign Insight Report.
+      profile_capture TEXT NOT NULL DEFAULT '{"enabled":false}',
+      -- Mobile Engagement Agency mode: shows completion time + a share prompt on the
+      -- results page, and surfaces engagement stats in the report.
+      engagement_mode INTEGER NOT NULL DEFAULT 0,
+      share_template TEXT,
+      published INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (now()::text),
+      updated_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS leads (
+      id TEXT PRIMARY KEY,
+      scorecard_id TEXT NOT NULL REFERENCES scorecards(id),
+      first_name TEXT,
+      last_name TEXT,
+      business_name TEXT,
+      email TEXT,
+      answers TEXT NOT NULL,
+      category_scores TEXT NOT NULL,
+      overall_score INTEGER NOT NULL,
+      tier TEXT NOT NULL,
+      personalization TEXT,
+      -- JSON: {ageRange, gender, location, socialClass, interest} — only the fields the
+      -- scorecard's profile_capture config actually asked for are ever present.
+      profile TEXT,
+      time_to_complete_seconds INTEGER,
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      token_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    -- A team member is an additional login under the same account (account_id
+    -- points at the owning row in users). Chosen model: every member sees
+    -- everything the account owns — no per-scorecard ownership split.
+    CREATE TABLE IF NOT EXISTS team_members (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL REFERENCES users(id),
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT,
+      invite_token_hash TEXT,
+      invite_expires_at TEXT,
+      active INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    -- One row per person who starts a scorecard (clicks past the gate), regardless
+    -- of whether they finish. Lets the aggregate report show a real completion
+    -- rate, not just a count of finished leads.
+    CREATE TABLE IF NOT EXISTS scorecard_starts (
+      id TEXT PRIMARY KEY,
+      scorecard_id TEXT NOT NULL REFERENCES scorecards(id),
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    -- One row per successful credit-bundle purchase (prepaid response-credit model).
+    CREATE TABLE IF NOT EXISTS credit_purchases (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      amount_kobo INTEGER NOT NULL,
+      credits_added INTEGER NOT NULL,
+      paystack_reference TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    -- One row per pay-per-qualified-lead charge attempt (success or failure), fired
+    -- in real time right after a CPL-mode scorecard submission.
+    CREATE TABLE IF NOT EXISTS cpl_charges (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      lead_id TEXT NOT NULL REFERENCES leads(id),
+      amount_kobo INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      paystack_reference TEXT,
+      created_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_scorecards_user ON scorecards(user_id);
+    CREATE INDEX IF NOT EXISTS idx_starts_scorecard ON scorecard_starts(scorecard_id);
+    CREATE INDEX IF NOT EXISTS idx_leads_scorecard ON leads(scorecard_id);
+    CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
+    CREATE INDEX IF NOT EXISTS idx_team_members_account ON team_members(account_id);
+    CREATE INDEX IF NOT EXISTS idx_credit_purchases_user ON credit_purchases(user_id);
+    CREATE INDEX IF NOT EXISTS idx_cpl_charges_user ON cpl_charges(user_id);
+  `);
+
+  // Defensive column backfill, same intent as the old SQLite version: if this
+  // ever runs against a database created before the billing-mode work, add
+  // whatever's missing. Harmless no-op on a fresh database.
+  const { rows: existingCols } = await pool.query(`
+    SELECT column_name FROM information_schema.columns WHERE table_name = 'users'
+  `);
+  const userColumns = new Set(existingCols.map((c) => c.column_name));
+  const newUserColumns = [
+    ["billing_mode", "TEXT NOT NULL DEFAULT 'subscription'"],
+    ['credit_balance', 'INTEGER NOT NULL DEFAULT 0'],
+    ['cpl_rate_kobo', 'INTEGER'],
+    ['paystack_authorization_code', 'TEXT'],
+    ['paystack_customer_code', 'TEXT'],
+  ];
+  for (const [name, def] of newUserColumns) {
+    if (!userColumns.has(name)) {
+      await pool.query(`ALTER TABLE users ADD COLUMN ${name} ${def}`);
+    }
+  }
+}
+
+async function close() {
+  await pool.end();
+}
+
+module.exports = { pool, run, get, all, migrate, close };

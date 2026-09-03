@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scorecard Builder — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-topbar">
+      <a href="/dashboard.html" class="brand" style="font-size:16px;">← <span class="brand-mark" style="width:26px;height:26px;font-size:13px;">S</span>Sieve</a>
+      <div class="actions">
+        <span class="save-status" id="save-status"></span>
+        <button class="btn btn-ghost btn-sm" id="preview-btn">Preview ↗</button>
+        <button class="btn btn-primary btn-sm" id="save-btn">Save</button>
+      </div>
+    </div>
+
+    <main class="app-main">
+      <div class="builder-grid">
+
+        <div class="builder-section">
+          <h2>Landing page</h2>
+          <p class="builder-hint">What a lead sees before they start.</p>
+          <div class="field"><label>Scorecard title</label><input type="text" id="title" placeholder="e.g. The Lead-Readiness Score" /></div>
+          <div class="field"><label>Intro copy</label><textarea id="intro" placeholder="One or two sentences explaining what they'll get."></textarea></div>
+          <div class="field">
+            <label>Brand name shown on this scorecard (optional)</label>
+            <input type="text" id="brand-name" placeholder="Defaults to your account name — set this when building on behalf of a client" />
+          </div>
+        </div>
+
+        <div class="builder-section">
+          <h2>Scoring categories</h2>
+          <p class="builder-hint">Each question's answers are scored into these categories — they become the bars on the results page. Sieve writes each category's commentary automatically from the respondent's score — write your own low/high message here only if you want to override it.</p>
+          <div id="categories"></div>
+          <button class="add-row-btn" id="add-cat">+ Add category</button>
+        </div>
+
+        <div class="builder-section">
+          <h2>Questions</h2>
+          <p class="builder-hint">Add a question, then give each option a score in whichever categories it applies to. Leave a score at 0 if an option doesn't affect that category. Sieve writes an insight for each answer automatically — add your own only if you want to override it for that specific option.</p>
+          <div id="questions"></div>
+          <button class="add-row-btn" id="add-q">+ Add question</button>
+        </div>
+
+        <div class="builder-section">
+          <h2>Personalise each outcome <span class="section-tag">optional</span></h2>
+          <p class="builder-hint">Every respondent's headline, message, and category commentary are already written automatically from their own score — a scorecard works fully out of the box with nothing filled in here. Write in any field below only if you want to override what Sieve generates for that tier, or to add a recommended next step with a real link (the one thing that has to come from you, since nothing here can invent your booking page or WhatsApp number).</p>
+          <div id="tiers"></div>
+        </div>
+
+        <div class="builder-section">
+          <h2>Brand Campaign Insight <span class="section-tag">Signal Desk</span></h2>
+          <p class="builder-hint">Turn this on for a brand-sponsored campaign. Captures real audience data — demographics, psychographics, location — and powers the colourful Brand Campaign Insight Report your sponsor sees. Off by default; every field below is optional.</p>
+          <label class="toggle-row"><input type="checkbox" id="pc-enabled" /> Capture audience profile data on this scorecard</label>
+          <div id="pc-fields" style="display:none;margin-top:10px;">
+            <label class="toggle-row"><input type="checkbox" id="pc-age" /> Age range</label>
+            <label class="toggle-row"><input type="checkbox" id="pc-gender" /> Gender</label>
+            <label class="toggle-row"><input type="checkbox" id="pc-location" /> Location (Nigerian state)</label>
+            <label class="toggle-row"><input type="checkbox" id="pc-social" /> Income bracket (social class)</label>
+            <div class="field" style="margin-top:12px;"><label>Interest question — psychographic: what they actually care about regarding the brand/product (optional)</label>
+              <input type="text" id="pc-interest-q" placeholder="e.g. Which best describes your interest in [Brand]?" /></div>
+            <div class="field"><label>Interest options, comma-separated (leave blank to skip this question)</label>
+              <input type="text" id="pc-interest-opts" placeholder="e.g. Skincare, Haircare, Makeup, Fragrance" /></div>
+          </div>
+        </div>
+
+        <div class="builder-section">
+          <h2>Engagement Campaign Mode <span class="section-tag">Mobile Engagement Agency</span></h2>
+          <p class="builder-hint">Turn this on to run this as a real engagement campaign — shows the respondent their completion time and a shareable result, and surfaces engagement stats (average time spent) in your report.</p>
+          <label class="toggle-row"><input type="checkbox" id="engagement-mode" /> Enable engagement mode</label>
+          <div class="field" style="margin-top:12px;"><label>Share prompt shown to respondents (optional — tokens: {score} {title} {brand} {tier} {link})</label>
+            <textarea id="share-template" placeholder="I scored {score}% on {title}! Check yours: {link}"></textarea></div>
+        </div>
+
+        <div class="builder-section" id="publish-section">
+          <h2>Publish</h2>
+          <p class="builder-hint" id="publish-hint">Publish to get a live link you can share with leads.</p>
+          <button class="btn btn-accent" id="publish-btn">Publish</button>
+          <div class="share-box" id="share-box" style="display:none;margin-top:14px;">
+            <input type="text" id="share-link" readonly />
+            <button class="icon-btn" id="copy-link" title="Copy link">⧉</button>
+          </div>
+          <div id="embed-block" style="display:none;margin-top:14px;">
+            <label style="font-size:13px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:6px;">
+              Embed this scorecard inside another page (e.g. a Traffic Desk qualification step)
+            </label>
+            <div class="share-box">
+              <input type="text" id="embed-code" readonly />
+              <button class="icon-btn" id="copy-embed" title="Copy embed code">⧉</button>
+            </div>
+          </div>
+          <div id="report-link-block" style="display:none;margin-top:14px;">
+            <a class="btn btn-ghost btn-sm" id="report-link" href="#">View aggregate report ↗</a>
+          </div>
+          <div id="whatsapp-share-block" style="display:none;margin-top:22px;padding-top:18px;border-top:1px solid var(--line);">
+            <label style="font-size:13px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:6px;">
+              Share on WhatsApp <span class="section-tag" style="margin-left:6px;">Nigerian audience</span>
+            </label>
+            <p class="builder-hint" style="margin-bottom:10px;">Most leads in Nigeria are reached on WhatsApp first — this opens WhatsApp with a ready-to-send message linking to this scorecard. The web link and everything else above still work exactly the same.</p>
+            <a class="btn btn-accent btn-sm" id="whatsapp-share-btn" href="#" target="_blank" rel="noopener" style="margin-bottom:12px;display:inline-block;">Share on WhatsApp ↗</a>
+            <label style="font-size:13px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:6px;">
+              Or copy this text to paste into a WhatsApp Status, group, or broadcast list
+            </label>
+            <div class="share-box">
+              <input type="text" id="whatsapp-broadcast-text" readonly />
+              <button class="icon-btn" id="copy-whatsapp-text" title="Copy text">⧉</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <div class="builder-footer">
+      <span class="save-status" id="save-status-bottom"></span>
+      <button class="btn btn-primary" id="save-btn-bottom">Save changes</button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const scorecardId = params.get('id');
+    if (!scorecardId) window.location.href = '/dashboard.html';
+
+    let state = {
+      title: '', intro: '', categories: [], questions: [], tiers: [], slug: '', published: false,
+      profileCapture: { enabled: false, captureAge: false, captureGender: false, captureLocation: false, captureSocialClass: false, interestQuestion: '', interestOptions: [] },
+      engagementMode: false, shareTemplate: '',
+    };
+
+    function slugKey(text, existingKeys) {
+      let base = text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '') || 'cat';
+      let key = base, n = 1;
+      while (existingKeys.includes(key)) { n += 1; key = `${base}${n}`; }
+      return key;
+    }
+
+    function render() {
+      renderCategories();
+      renderQuestions();
+      renderTiers();
+      renderPublish();
+      document.getElementById('title').value = state.title;
+      document.getElementById('intro').value = state.intro;
+      document.getElementById('brand-name').value = state.brandName || '';
+      renderInsightSettings();
+    }
+
+    function renderInsightSettings() {
+      const pc = state.profileCapture || {};
+      document.getElementById('pc-enabled').checked = !!pc.enabled;
+      document.getElementById('pc-age').checked = !!pc.captureAge;
+      document.getElementById('pc-gender').checked = !!pc.captureGender;
+      document.getElementById('pc-location').checked = !!pc.captureLocation;
+      document.getElementById('pc-social').checked = !!pc.captureSocialClass;
+      document.getElementById('pc-interest-q').value = pc.interestQuestion || '';
+      document.getElementById('pc-interest-opts').value = (pc.interestOptions || []).join(', ');
+      document.getElementById('pc-fields').style.display = pc.enabled ? 'block' : 'none';
+
+      document.getElementById('engagement-mode').checked = !!state.engagementMode;
+      document.getElementById('share-template').value = state.shareTemplate || '';
+    }
+
+    function renderCategories() {
+      const el = document.getElementById('categories');
+      el.innerHTML = state.categories.map((c, i) => `
+        <div class="cat-card">
+          <div class="cat-row">
+            <input type="text" value="${escapeAttr(c.label)}" data-cat-label="${i}" placeholder="Category name" />
+            <button class="icon-btn" data-remove-cat="${i}" title="Remove">×</button>
+          </div>
+          <div class="cat-personalize">
+            <textarea data-cat-low="${i}" placeholder="Override the auto-written message for a LOW score here (optional)">${escapeHtml(c.lowMessage || '')}</textarea>
+            <textarea data-cat-high="${i}" placeholder="Override the auto-written message for a HIGH score here (optional)">${escapeHtml(c.highMessage || '')}</textarea>
+          </div>
+        </div>
+      `).join('');
+      el.querySelectorAll('[data-cat-label]').forEach(input => {
+        input.addEventListener('input', (e) => {
+          state.categories[+e.target.dataset.catLabel].label = e.target.value;
+        });
+      });
+      el.querySelectorAll('[data-cat-low]').forEach(ta => {
+        ta.addEventListener('input', (e) => { state.categories[+e.target.dataset.catLow].lowMessage = e.target.value; });
+      });
+      el.querySelectorAll('[data-cat-high]').forEach(ta => {
+        ta.addEventListener('input', (e) => { state.categories[+e.target.dataset.catHigh].highMessage = e.target.value; });
+      });
+      el.querySelectorAll('[data-remove-cat]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (state.categories.length <= 1) return alert('A scorecard needs at least one category.');
+          const idx = +e.target.dataset.removeCat;
+          const removedKey = state.categories[idx].key;
+          state.categories.splice(idx, 1);
+          state.questions.forEach(q => q.options.forEach(o => { delete o.score[removedKey]; }));
+          render();
+        });
+      });
+    }
+
+    const expandedInsights = new Set(); // "qi:oi" — purely UI state, not saved
+
+    function renderQuestions() {
+      const el = document.getElementById('questions');
+      el.innerHTML = state.questions.map((q, qi) => `
+        <div class="question-card">
+          <div class="question-card-top">
+            <input type="text" value="${escapeAttr(q.text)}" data-q-text="${qi}" placeholder="Question text" />
+            <button class="icon-btn" data-remove-q="${qi}" title="Remove question">×</button>
+          </div>
+          ${q.options.map((o, oi) => `
+            <div class="option-row">
+              <input type="text" class="opt-label" value="${escapeAttr(o.label)}" data-opt-label="${qi}:${oi}" placeholder="Answer option" />
+              ${state.categories.map(c => `
+                <div class="option-score">
+                  <label>${escapeHtml(c.label.slice(0, 10))}</label>
+                  <input type="number" min="0" max="10" value="${o.score[c.key] || 0}" data-opt-score="${qi}:${oi}:${c.key}" />
+                </div>
+              `).join('')}
+              <button class="icon-btn" data-remove-opt="${qi}:${oi}" title="Remove option">×</button>
+            </div>
+            ${expandedInsights.has(`${qi}:${oi}`) || (o.insight && o.insight.trim()) ? `
+              <textarea class="opt-insight" data-opt-insight="${qi}:${oi}" placeholder="Override the auto-written insight for this answer (optional)">${escapeHtml(o.insight || '')}</textarea>
+            ` : `<button class="insight-toggle" data-insight-toggle="${qi}:${oi}" type="button">+ Override the auto-written insight for this answer</button>`}
+          `).join('')}
+          <button class="add-row-btn" data-add-opt="${qi}">+ Add option</button>
+        </div>
+      `).join('');
+
+      el.querySelectorAll('[data-q-text]').forEach(input => {
+        input.addEventListener('input', (e) => { state.questions[+e.target.dataset.qText].text = e.target.value; });
+      });
+      el.querySelectorAll('[data-opt-label]').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const [qi, oi] = e.target.dataset.optLabel.split(':').map(Number);
+          state.questions[qi].options[oi].label = e.target.value;
+        });
+      });
+      el.querySelectorAll('[data-opt-score]').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const [qi, oi, key] = e.target.dataset.optScore.split(':');
+          state.questions[+qi].options[+oi].score[key] = Number(e.target.value) || 0;
+        });
+      });
+      el.querySelectorAll('[data-opt-insight]').forEach(ta => {
+        ta.addEventListener('input', (e) => {
+          const [qi, oi] = e.target.dataset.optInsight.split(':').map(Number);
+          state.questions[qi].options[oi].insight = e.target.value;
+        });
+      });
+      el.querySelectorAll('[data-insight-toggle]').forEach(btn => {
+        btn.addEventListener('click', (e) => { expandedInsights.add(e.target.dataset.insightToggle); render(); });
+      });
+      el.querySelectorAll('[data-remove-q]').forEach(btn => {
+        btn.addEventListener('click', (e) => { state.questions.splice(+e.target.dataset.removeQ, 1); render(); });
+      });
+      el.querySelectorAll('[data-remove-opt]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const [qi, oi] = e.target.dataset.removeOpt.split(':').map(Number);
+          if (state.questions[qi].options.length <= 2) return alert('A question needs at least two options.');
+          state.questions[qi].options.splice(oi, 1);
+          render();
+        });
+      });
+      el.querySelectorAll('[data-add-opt]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const qi = +e.target.dataset.addOpt;
+          const score = {}; state.categories.forEach(c => { score[c.key] = 0; });
+          state.questions[qi].options.push({ label: 'New option', score });
+          render();
+        });
+      });
+    }
+
+    function renderTiers() {
+      const el = document.getElementById('tiers');
+      el.innerHTML = state.tiers.map((t, i) => `
+        <div class="tier-card">
+          <div class="tier-card-label">${escapeHtml(t.label)} <span class="tier-card-min">${t.min}%+</span></div>
+          <div class="field"><label>Headline shown to them (optional — auto-written from their score if left blank)</label>
+            <input type="text" data-tier-headline="${i}" value="${escapeAttr(t.headline || '')}" placeholder="e.g. You're ready to move" /></div>
+          <div class="field"><label>Message (optional — auto-written if left blank)</label>
+            <textarea data-tier-message="${i}" placeholder="A sentence or two that speaks directly to someone who lands in this tier.">${escapeHtml(t.message || '')}</textarea></div>
+          <div class="field"><label>Recommended next step (optional — no recommendation shows unless you write one)</label>
+            <textarea data-tier-rec="${i}" placeholder="Tie this to what you actually sell — e.g. 'Book a viewing with us this week.'">${escapeHtml(t.recommendation || '')}</textarea></div>
+          <div class="field"><label>Link</label>
+            <input type="url" data-tier-url="${i}" value="${escapeAttr(t.recommendationUrl || '')}" placeholder="https://" /></div>
+        </div>
+      `).join('');
+      el.querySelectorAll('[data-tier-headline]').forEach(input => input.addEventListener('input', e => { state.tiers[+e.target.dataset.tierHeadline].headline = e.target.value; }));
+      el.querySelectorAll('[data-tier-message]').forEach(ta => ta.addEventListener('input', e => { state.tiers[+e.target.dataset.tierMessage].message = e.target.value; }));
+      el.querySelectorAll('[data-tier-rec]').forEach(ta => ta.addEventListener('input', e => { state.tiers[+e.target.dataset.tierRec].recommendation = e.target.value; }));
+      el.querySelectorAll('[data-tier-url]').forEach(input => input.addEventListener('input', e => { state.tiers[+e.target.dataset.tierUrl].recommendationUrl = e.target.value; }));
+    }
+
+    function renderPublish() {
+      const btn = document.getElementById('publish-btn');
+      const hint = document.getElementById('publish-hint');
+      const shareBox = document.getElementById('share-box');
+      const shareLink = document.getElementById('share-link');
+      const embedBlock = document.getElementById('embed-block');
+      const embedCode = document.getElementById('embed-code');
+      const reportBlock = document.getElementById('report-link-block');
+      const reportLink = document.getElementById('report-link');
+      const whatsappBlock = document.getElementById('whatsapp-share-block');
+      const whatsappShareBtn = document.getElementById('whatsapp-share-btn');
+      const whatsappBroadcastText = document.getElementById('whatsapp-broadcast-text');
+
+      btn.textContent = state.published ? 'Unpublish' : 'Publish';
+      btn.className = state.published ? 'btn btn-ghost' : 'btn btn-accent';
+      hint.textContent = state.published
+        ? 'This scorecard is live — anyone with the link can take it.'
+        : 'Publish to get a live link you can share with leads.';
+      shareBox.style.display = state.published ? 'flex' : 'none';
+      embedBlock.style.display = state.published ? 'block' : 'none';
+      reportBlock.style.display = state.published ? 'block' : 'none';
+      whatsappBlock.style.display = state.published ? 'block' : 'none';
+
+      if (state.published) {
+        const liveUrl = `${location.origin}/take/index.html?slug=${state.slug}`;
+        shareLink.value = liveUrl;
+        embedCode.value = `<iframe src="${liveUrl}&embed=1" style="width:100%;max-width:520px;height:640px;border:0;" title="${state.title.replace(/"/g, '&quot;')}"></iframe>`;
+        reportLink.href = `/report.html?id=${scorecardId}`;
+
+        const brand = (state.brandName && state.brandName.trim()) || 'us';
+        const waMessage = `Hi! ${state.title} — take this quick assessment from ${brand} and get your results instantly: ${liveUrl}`;
+        whatsappShareBtn.href = `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
+        whatsappBroadcastText.value = waMessage;
+      }
+
+      const previewBtn = document.getElementById('preview-btn');
+      previewBtn.disabled = !state.published;
+      previewBtn.title = state.published ? '' : 'Publish first to preview the live page';
+    }
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    async function save() {
+      const statusEls = [document.getElementById('save-status'), document.getElementById('save-status-bottom')];
+      statusEls.forEach(el => el.textContent = 'Saving…');
+      try {
+        const { scorecard } = await api(`/scorecards/${scorecardId}`, {
+          method: 'PUT',
+          body: {
+            title: state.title, intro: state.intro, categories: state.categories, questions: state.questions,
+            tiers: state.tiers, brandName: state.brandName, profileCapture: state.profileCapture,
+            engagementMode: state.engagementMode, shareTemplate: state.shareTemplate,
+          },
+        });
+        state = { ...state, ...scorecard };
+        statusEls.forEach(el => el.textContent = 'Saved ✓');
+        setTimeout(() => statusEls.forEach(el => el.textContent = ''), 2000);
+      } catch (ex) {
+        statusEls.forEach(el => el.textContent = '');
+        alert(ex.message);
+      }
+    }
+
+    (async () => {
+      const user = await requireUser();
+      if (!user) return;
+
+      const { scorecard } = await api(`/scorecards/${scorecardId}`);
+      state = scorecard;
+      if (!state.categories.length) state.categories = [{ key: 'fit', label: 'Fit' }];
+      render();
+
+      document.getElementById('title').addEventListener('input', (e) => { state.title = e.target.value; });
+      document.getElementById('intro').addEventListener('input', (e) => { state.intro = e.target.value; });
+      document.getElementById('brand-name').addEventListener('input', (e) => { state.brandName = e.target.value; });
+
+      document.getElementById('pc-enabled').addEventListener('change', (e) => {
+        state.profileCapture.enabled = e.target.checked;
+        document.getElementById('pc-fields').style.display = e.target.checked ? 'block' : 'none';
+      });
+      document.getElementById('pc-age').addEventListener('change', (e) => { state.profileCapture.captureAge = e.target.checked; });
+      document.getElementById('pc-gender').addEventListener('change', (e) => { state.profileCapture.captureGender = e.target.checked; });
+      document.getElementById('pc-location').addEventListener('change', (e) => { state.profileCapture.captureLocation = e.target.checked; });
+      document.getElementById('pc-social').addEventListener('change', (e) => { state.profileCapture.captureSocialClass = e.target.checked; });
+      document.getElementById('pc-interest-q').addEventListener('input', (e) => { state.profileCapture.interestQuestion = e.target.value; });
+      document.getElementById('pc-interest-opts').addEventListener('input', (e) => {
+        state.profileCapture.interestOptions = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+      });
+      document.getElementById('engagement-mode').addEventListener('change', (e) => { state.engagementMode = e.target.checked; });
+      document.getElementById('share-template').addEventListener('input', (e) => { state.shareTemplate = e.target.value; });
+
+      document.getElementById('add-cat').addEventListener('click', () => {
+        const key = slugKey('category', state.categories.map(c => c.key));
+        state.categories.push({ key, label: 'New category' });
+        state.questions.forEach(q => q.options.forEach(o => { o.score[key] = 0; }));
+        render();
+      });
+
+      document.getElementById('add-q').addEventListener('click', () => {
+        const score = {}; state.categories.forEach(c => { score[c.key] = 0; });
+        state.questions.push({ text: 'New question', options: [{ label: 'Option A', score: { ...score } }, { label: 'Option B', score: { ...score } }] });
+        render();
+      });
+
+      document.getElementById('save-btn').addEventListener('click', save);
+      document.getElementById('save-btn-bottom').addEventListener('click', save);
+
+      document.getElementById('publish-btn').addEventListener('click', async () => {
+        await save();
+        const { scorecard: updated } = await api(`/scorecards/${scorecardId}/publish`, { method: 'POST', body: { published: !state.published } });
+        state.published = updated.published;
+        state.slug = updated.slug;
+        renderPublish();
+      });
+
+      document.getElementById('preview-btn').addEventListener('click', () => {
+        if (!state.published) return;
+        window.open(`/take/index.html?slug=${state.slug}`, '_blank');
+      });
+
+      document.getElementById('copy-link').addEventListener('click', () => {
+        document.getElementById('share-link').select();
+        document.execCommand('copy');
+      });
+
+      document.getElementById('copy-embed').addEventListener('click', () => {
+        document.getElementById('embed-code').select();
+        document.execCommand('copy');
+      });
+
+      document.getElementById('copy-whatsapp-text').addEventListener('click', () => {
+        document.getElementById('whatsapp-broadcast-text').select();
+        document.execCommand('copy');
+      });
+    })();
+  </script>
+</body>
+</html>

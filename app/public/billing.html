@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Billing — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-topbar">
+      <a href="/dashboard.html" class="brand" style="font-size:16px;">← <span class="brand-mark" style="width:26px;height:26px;font-size:13px;">S</span>Sieve</a>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm" data-logout>Log out</button>
+      </div>
+    </div>
+    <main class="app-main" style="max-width:720px;">
+      <div class="page-head"><h1>Billing</h1></div>
+      <p id="config-warning" class="form-error" style="display:none;"></p>
+
+      <div id="wallet-card" class="wallet-card"></div>
+
+      <div class="bill-tabs">
+        <button class="bill-tab active" data-tab="credits">Credits</button>
+        <button class="bill-tab" data-tab="cpl">Pay-per-lead</button>
+        <button class="bill-tab bill-tab-secondary" data-tab="subscription">Subscription</button>
+      </div>
+
+      <section id="tab-credits" class="bill-panel">
+        <p class="bill-panel-intro">Top up a bundle of response credits once — no recurring charge. Every completed scorecard response uses one credit. Buy again whenever the balance runs low.</p>
+        <div id="bundles"></div>
+      </section>
+
+      <section id="tab-cpl" class="bill-panel" style="display:none;">
+        <p class="bill-panel-intro">No upfront spend at all. Save a card once (a small ₦100 verification charge) and pay only for each qualified lead a scorecard produces — billed automatically the moment they submit.</p>
+        <div id="cpl-box"></div>
+      </section>
+
+      <section id="tab-subscription" class="bill-panel" style="display:none;">
+        <p class="bill-panel-intro bill-panel-secondary">Secondary option — a flat monthly fee regardless of how many leads come in. Most Nigerian businesses prefer Credits or Pay-per-lead below, but subscription is still here if a predictable monthly bill suits you better.</p>
+        <div id="plans"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    const PLAN_LABELS = { starter: 'Starter — ₦25,000/mo', business: 'Business — ₦65,000/mo', pro: 'Pro — ₦95,000/mo' };
+    const MODE_LABELS = { subscription: 'Subscription', credits: 'Credits', cpl: 'Pay-per-lead' };
+    const MODE_COLORS = { subscription: 'mode-sub', credits: 'mode-credits', cpl: 'mode-cpl' };
+
+    let paystackPublicKey = null;
+    let currentUser = null;
+
+    function fmtNaira(kobo) { return '₦' + (kobo / 100).toLocaleString('en-NG'); }
+
+    async function renderWallet() {
+      const wallet = await api('/billing/wallet');
+      const el = document.getElementById('wallet-card');
+      el.innerHTML = `
+        <div class="wallet-mode ${MODE_COLORS[wallet.billingMode]}">${MODE_LABELS[wallet.billingMode]}</div>
+        <div class="wallet-stats">
+          <div><span class="wallet-num">${wallet.creditBalance}</span><span class="wallet-label">credits left</span></div>
+          <div><span class="wallet-num">${fmtNaira(wallet.cplRateKobo)}</span><span class="wallet-label">per qualified lead</span></div>
+          <div><span class="wallet-num">${wallet.hasCardOnFile ? 'Yes' : 'No'}</span><span class="wallet-label">card on file</span></div>
+        </div>
+      `;
+      return wallet;
+    }
+
+    async function switchMode(mode, btn) {
+      try {
+        await api('/billing/mode', { method: 'POST', body: { mode } });
+        await renderWallet();
+        if (btn) { btn.textContent = 'Active'; }
+        renderCredits();
+        renderCpl();
+      } catch (ex) {
+        alert(ex.message);
+      }
+    }
+
+    function payWithPaystack({ amount, metadata, onSuccess }) {
+      if (!paystackPublicKey) { alert('Paystack is not configured on this server yet.'); return; }
+      const handler = PaystackPop.setup({
+        key: paystackPublicKey,
+        email: currentUser.email,
+        amount,
+        currency: 'NGN',
+        metadata,
+        callback: (response) => onSuccess(response.reference),
+        onClose: () => {},
+      });
+      handler.openIframe();
+    }
+
+    async function renderCredits() {
+      const [{ bundles }, wallet] = await Promise.all([api('/billing/credit-bundles'), api('/billing/wallet')]);
+      const el = document.getElementById('bundles');
+      el.innerHTML = bundles.map(b => `
+        <div class="plan-mini">
+          <div>
+            <strong>${b.label}</strong>
+            ${b.badge ? `<span class="tier-pill" style="margin-left:8px;">${b.badge}</span>` : ''}
+          </div>
+          <button class="btn btn-accent btn-sm" data-buy="${b.key}" data-amount="${b.amountKobo}" data-credits="${b.credits}" ${!paystackPublicKey ? 'disabled' : ''}>Buy</button>
+        </div>
+      `).join('') + (wallet.billingMode !== 'credits' ? `
+        <button class="btn btn-ghost btn-sm" id="use-credits-mode" style="margin-top:6px;">Switch active billing to Credits</button>
+      ` : '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Credits is your active billing mode.</p>');
+
+      el.querySelectorAll('[data-buy]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const bundleKey = btn.dataset.buy;
+          const amount = Number(btn.dataset.amount);
+          payWithPaystack({
+            amount,
+            metadata: { businessName: currentUser.business_name, bundleKey },
+            onSuccess: (reference) => {
+              api('/billing/credits/verify', { method: 'POST', body: { reference, bundleKey } })
+                .then(async (res) => {
+                  await api('/billing/mode', { method: 'POST', body: { mode: 'credits' } }).catch(() => {});
+                  alert(`Payment verified — ${res.creditsAdded} credits added.`);
+                  await renderWallet();
+                  renderCredits();
+                })
+                .catch(ex => alert(`Payment succeeded but verification failed: ${ex.message}`));
+            },
+          });
+        });
+      });
+      const useBtn = document.getElementById('use-credits-mode');
+      if (useBtn) useBtn.addEventListener('click', () => switchMode('credits', useBtn));
+    }
+
+    async function renderCpl() {
+      const [{ rateKobo }, wallet] = await Promise.all([api('/billing/cpl-rate'), api('/billing/wallet')]);
+      const el = document.getElementById('cpl-box');
+      el.innerHTML = `
+        <div class="plan-mini">
+          <div>
+            <strong>${fmtNaira(rateKobo)} per qualified lead</strong>
+            <div style="font-size:12.5px;color:var(--ink-faint);">${wallet.hasCardOnFile ? 'A card is already saved.' : 'No card saved yet — verify one to activate.'}</div>
+          </div>
+          <button class="btn btn-accent btn-sm" id="save-card-btn" ${!paystackPublicKey ? 'disabled' : ''}>${wallet.hasCardOnFile ? 'Replace card' : 'Save a card'}</button>
+        </div>
+        ${wallet.hasCardOnFile && wallet.billingMode !== 'cpl' ? `<button class="btn btn-ghost btn-sm" id="use-cpl-mode" style="margin-top:6px;">Switch active billing to Pay-per-lead</button>` : ''}
+        ${wallet.billingMode === 'cpl' ? '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Pay-per-lead is your active billing mode.</p>' : ''}
+      `;
+      document.getElementById('save-card-btn').addEventListener('click', () => {
+        payWithPaystack({
+          amount: 10000,
+          metadata: { businessName: currentUser.business_name, purpose: 'cpl-card-verify' },
+          onSuccess: (reference) => {
+            api('/billing/cpl/save-card', { method: 'POST', body: { reference } })
+              .then(async () => {
+                await api('/billing/mode', { method: 'POST', body: { mode: 'cpl' } }).catch(() => {});
+                alert('Card saved — pay-per-lead billing is now active.');
+                await renderWallet();
+                renderCpl();
+              })
+              .catch(ex => alert(`Card charge succeeded but saving it failed: ${ex.message}`));
+          },
+        });
+      });
+      const useBtn = document.getElementById('use-cpl-mode');
+      if (useBtn) useBtn.addEventListener('click', () => switchMode('cpl', useBtn));
+    }
+
+    async function renderSubscription() {
+      const [{ plans }, wallet] = await Promise.all([api('/billing/plan-prices'), api('/billing/wallet')]);
+      const plansEl = document.getElementById('plans');
+      plansEl.innerHTML = plans.map(p => `
+        <div class="plan-mini ${currentUser.plan === p.key ? 'current' : ''}">
+          <div>
+            <strong>${PLAN_LABELS[p.key] || p.key}</strong>
+            ${currentUser.plan === p.key ? '<div style="font-size:12.5px;color:var(--good);font-weight:700;">Current plan</div>' : ''}
+          </div>
+          <button class="btn ${currentUser.plan === p.key ? 'btn-ghost' : 'btn-accent'} btn-sm" data-pay="${p.key}" data-amount="${p.amountKobo}" ${!paystackPublicKey ? 'disabled' : ''}>
+            ${currentUser.plan === p.key ? 'Active' : 'Upgrade'}
+          </button>
+        </div>
+      `).join('') + (wallet.billingMode !== 'subscription' ? `
+        <button class="btn btn-ghost btn-sm" id="use-sub-mode" style="margin-top:6px;">Switch active billing to Subscription</button>
+      ` : '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Subscription is your active billing mode.</p>');
+
+      plansEl.querySelectorAll('[data-pay]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const plan = btn.dataset.pay;
+          const amount = Number(btn.dataset.amount);
+          payWithPaystack({
+            amount,
+            metadata: { businessName: currentUser.business_name, plan },
+            onSuccess: (reference) => {
+              api('/billing/verify', { method: 'POST', body: { reference, plan } })
+                .then(() => { alert('Payment verified — plan updated.'); window.location.reload(); })
+                .catch(ex => alert(`Payment succeeded but verification failed: ${ex.message}`));
+            },
+          });
+        });
+      });
+      const useBtn = document.getElementById('use-sub-mode');
+      if (useBtn) useBtn.addEventListener('click', () => switchMode('subscription', useBtn));
+    }
+
+    (async () => {
+      currentUser = await requireUser();
+      if (!currentUser) return;
+
+      const config = await api('/billing/config');
+      paystackPublicKey = config.paystackPublicKey;
+      if (!paystackPublicKey) {
+        const warn = document.getElementById('config-warning');
+        warn.style.display = 'block';
+        warn.textContent = 'Paystack is not configured yet on this server — set PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY in server/.env (test keys are free from your Paystack dashboard, no business verification needed).';
+      }
+
+      await renderWallet();
+      await renderCredits();
+      await renderCpl();
+      await renderSubscription();
+
+      document.querySelectorAll('.bill-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.bill-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.bill-panel').forEach(p => p.style.display = 'none');
+          document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Team — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-topbar">
+      <a href="/dashboard.html" class="brand" style="font-size:16px;">← <span class="brand-mark" style="width:26px;height:26px;font-size:13px;">S</span>Sieve</a>
+      <div class="actions"><button class="btn btn-ghost btn-sm" data-logout>Log out</button></div>
+    </div>
+    <main class="app-main" style="max-width:640px;">
+      <div class="page-head"><h1>Team</h1></div>
+      <p id="seat-info" style="color:var(--ink-soft);font-size:14.5px;margin-bottom:20px;"></p>
+      <div id="owner-only" style="display:none;">
+        <div class="form-error" id="err"></div>
+        <form id="invite-form" style="display:flex;gap:10px;margin-bottom:28px;">
+          <input type="email" id="invite-email" placeholder="teammate@business.com" style="flex:1;padding:12px 14px;border-radius:8px;border:1.5px solid var(--line);font-family:var(--font-body);font-size:15px;" required />
+          <button class="btn btn-accent" type="submit">Invite</button>
+        </form>
+      </div>
+      <div id="members-list"><p style="color:var(--ink-faint);">Loading…</p></div>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    (async () => {
+      const user = await requireUser();
+      if (!user) return;
+
+      const me = await api('/auth/me');
+
+      async function load() {
+        const data = await api('/team');
+        document.getElementById('seat-info').textContent = `${data.seatsUsed} of ${data.seatLimit === Infinity ? 'unlimited' : data.seatLimit} seats used on the ${data.plan} plan.`;
+
+        const list = document.getElementById('members-list');
+        const rows = [`<div class="plan-mini"><div><strong>${escapeHtml(data.owner.businessName)}</strong><div style="font-size:12.5px;color:var(--ink-faint);">${escapeHtml(data.owner.email)} · Owner</div></div></div>`];
+        data.members.forEach(m => {
+          rows.push(`
+            <div class="plan-mini">
+              <div>
+                <strong>${escapeHtml(m.email)}</strong>
+                <div style="font-size:12.5px;color:${m.pending ? 'var(--accent-ink)' : 'var(--good)'};">${m.pending ? 'Invite pending' : 'Active'}</div>
+              </div>
+              ${me.isOwner ? `<button class="btn btn-ghost btn-sm" data-remove="${m.id}">Remove</button>` : ''}
+            </div>
+          `);
+        });
+        list.innerHTML = rows.join('');
+        list.querySelectorAll('[data-remove]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Remove this team member?')) return;
+            await api(`/team/${btn.dataset.remove}`, { method: 'DELETE' });
+            load();
+          });
+        });
+      }
+
+      function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+      if (me.isOwner) {
+        document.getElementById('owner-only').style.display = 'block';
+        const err = document.getElementById('err');
+        document.getElementById('invite-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          hideError(err);
+          try {
+            await api('/team/invite', { method: 'POST', body: { email: document.getElementById('invite-email').value } });
+            document.getElementById('invite-email').value = '';
+            load();
+          } catch (ex) {
+            showError(err, ex.message);
+          }
+        });
+      }
+
+      load();
+    })();
+  </script>
+</body>
+</html>

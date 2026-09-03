@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sieve Scorecard</title>
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; background: var(--paper); }
+  /* Embed mode (?embed=1) — dropped into another page's own layout (e.g. Traffic
+     Desk's qualification step), so it shouldn't claim a full viewport or padding. */
+  body.is-embed { min-height: 0; padding: 0; }
+  body.is-embed .demo-frame { box-shadow: none; border-radius: 0; }
+</style>
+</head>
+<body>
+  <div class="demo-frame" style="width:100%;">
+    <div class="demo-topbar">
+      <span class="brand" style="font-size:16px;"><span class="brand-mark" style="width:26px;height:26px;font-size:13px;">S</span><span id="brand-name">Sieve</span></span>
+    </div>
+    <div id="demo-root"><div class="demo-body"><p class="text-center" style="color:var(--ink-faint);">Loading…</p></div></div>
+  </div>
+  <script src="take.js"></script>
+</body>
+</html>

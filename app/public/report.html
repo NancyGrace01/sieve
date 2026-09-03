@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Brand Campaign Insight Report — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+<style>
+  :root {
+    --c-score: #FF6B35; --c-score-soft: #FFE8DB;
+    --c-cat: #1F5FE0; --c-cat-soft: #E6EDFC;
+    --c-demo: #7C3AED; --c-demo-soft: #F1E8FE;
+    --c-geo: #0D9488; --c-geo-soft: #DCF5F2;
+    --c-class: #C9971C; --c-class-soft: #FBF0DA;
+    --c-interest: #DB2777; --c-interest-soft: #FCE4F0;
+    --c-engage: #0891B2; --c-engage-soft: #DFF3F7;
+  }
+  .insight-section { border-radius: var(--radius-lg); padding: 26px 28px; margin-bottom: 22px; border: 1px solid var(--line); background: var(--surface); }
+  .insight-kicker { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 5px 12px; border-radius: 999px; margin-bottom: 12px; }
+  .insight-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .insight-sub { font-size: 13.5px; color: var(--ink-faint); margin-bottom: 18px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px; border-top: 3px solid var(--c-score); }
+  .stat-box .num { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--ink); }
+  .stat-box .lbl { font-size: 11.5px; color: var(--ink-faint); font-weight: 700; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+  .donut-wrap { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+  .donut { width: 116px; height: 116px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .donut-hole { width: 74px; height: 74px; border-radius: 50%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .donut-hole .n { font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--ink); }
+  .donut-hole .l { font-size: 9.5px; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; }
+  .legend { display: flex; flex-direction: column; gap: 8px; min-width: 180px; }
+  .legend-row { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { flex: 1; font-weight: 600; color: var(--ink); }
+  .legend-pct { color: var(--ink-faint); font-weight: 700; font-size: 12.5px; }
+
+  .hbar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+  .hbar-name { width: 150px; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .hbar-track { flex: 1; height: 9px; background: var(--surface-sunk); border-radius: 999px; overflow: hidden; }
+  .hbar-fill { height: 100%; }
+  .hbar-pct { width: 76px; text-align: right; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+
+  .twin-donut { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .twin-donut { grid-template-columns: 1fr; } }
+
+  .chart-empty { font-size: 13.5px; color: var(--ink-faint); }
+  .trend-row { display: flex; align-items: flex-end; gap: 4px; height: 90px; margin-top: 10px; }
+  .trend-bar { flex: 1; background: var(--c-cat); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .trend-labels { display: flex; gap: 4px; margin-top: 6px; }
+  .trend-labels span { flex: 1; text-align: center; font-size: 10px; color: var(--ink-faint); }
+  .signal-note { background: var(--surface-sunk); border-radius: var(--radius-md); padding: 16px 20px; font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-topbar">
+      <a href="/dashboard.html" class="brand" style="font-size:16px;">← <span class="brand-mark" style="width:26px;height:26px;font-size:13px;">S</span>Sieve</a>
+      <div class="actions"><button class="btn btn-ghost btn-sm" data-logout>Log out</button></div>
+    </div>
+    <main class="app-main">
+      <div class="page-head"><h1 id="page-title">Brand Campaign Insight Report</h1></div>
+      <div id="content"><p style="color:var(--ink-faint);">Loading…</p></div>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const scorecardId = params.get('id');
+    if (!scorecardId) window.location.href = '/dashboard.html';
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+    function donut(items, palette, holeLabel) {
+      const total = items.reduce((s, i) => s + i.count, 0);
+      if (!items.length || !total) return '<p class="chart-empty">No data yet.</p>';
+      let acc = 0;
+      const stops = items.map((it, i) => {
+        const start = acc; acc += it.pct;
+        return `${palette[i % palette.length]} ${start}% ${acc}%`;
+      }).join(', ');
+      const legend = items.map((it, i) => `
+        <div class="legend-row">
+          <span class="legend-dot" style="background:${palette[i % palette.length]}"></span>
+          <span class="legend-label">${escapeHtml(it.label)}</span>
+          <span class="legend-pct">${it.pct}% (${it.count})</span>
+        </div>
+      `).join('');
+      return `
+        <div class="donut-wrap">
+          <div class="donut" style="background:conic-gradient(${stops}, var(--surface-sunk) ${Math.min(acc, 100)}% 100%);">
+            <div class="donut-hole"><span class="n">${total}</span><span class="l">${holeLabel}</span></div>
+          </div>
+          <div class="legend">${legend}</div>
+        </div>
+      `;
+    }
+
+    function hbars(items, color) {
+      if (!items.length) return '<p class="chart-empty">No data yet.</p>';
+      return items.slice(0, 8).map(it => `
+        <div class="hbar-row">
+          <div class="hbar-name">${escapeHtml(it.label)}</div>
+          <div class="hbar-track"><div class="hbar-fill" style="width:${it.pct}%;background:${color};"></div></div>
+          <div class="hbar-pct">${it.count} (${it.pct}%)</div>
+        </div>
+      `).join('');
+    }
+
+    function formatDuration(seconds) {
+      if (seconds == null) return '—';
+      if (seconds < 60) return `${seconds}s`;
+      return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    }
+
+    (async () => {
+      const user = await requireUser();
+      if (!user) return;
+
+      const { scorecard } = await api(`/scorecards/${scorecardId}`);
+      document.getElementById('page-title').textContent = `Brand Campaign Insight Report — ${scorecard.title}`;
+
+      const r = await api(`/scorecards/${scorecardId}/report`);
+      const content = document.getElementById('content');
+      const maxTrend = Math.max(1, ...r.trend.map(t => t.count));
+
+      const tierPalette = ['#FF6B35', '#1F5FE0', '#8285A0', '#16825D'];
+      const tierDonutItems = r.tierBreakdown.filter(t => t.count > 0).map(t => ({ label: t.label, count: t.count, pct: t.pct }));
+
+      const audienceCards = [];
+      if (r.audience.enabled) {
+        if (r.audience.ageBreakdown.length || r.audience.genderBreakdown.length) {
+          audienceCards.push(`
+            <div class="insight-section">
+              <span class="insight-kicker" style="background:var(--c-demo-soft);color:var(--c-demo);">Demographics</span>
+              <div class="insight-title">Who your audience actually is</div>
+              <p class="insight-sub">Age and gender, self-reported at the gate — not inferred.</p>
+              <div class="twin-donut">
+                <div>
+                  <p style="font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:10px;">AGE RANGE</p>
+                  ${donut(r.audience.ageBreakdown, ['#7C3AED', '#A78BFA', '#C4B5FD', '#DDD6FE', '#5B21B6', '#4C1D95'], 'PEOPLE')}
+                </div>
+                <div>
+                  <p style="font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:10px;">GENDER</p>
+                  ${donut(r.audience.genderBreakdown, ['#7C3AED', '#DB2777', '#8285A0'], 'PEOPLE')}
+                </div>
+              </div>
+            </div>
+          `);
+        }
+        if (r.audience.locationBreakdown.length) {
+          audienceCards.push(`
+            <div class="insight-section">
+              <span class="insight-kicker" style="background:var(--c-geo-soft);color:var(--c-geo);">Location</span>
+              <div class="insight-title">Where your audience is</div>
+              <p class="insight-sub">Top locations by respondent count.</p>
+              ${hbars(r.audience.locationBreakdown, 'var(--c-geo)')}
+            </div>
+          `);
+        }
+        if (r.audience.socialClassBreakdown.length) {
+          audienceCards.push(`
+            <div class="insight-section">
+              <span class="insight-kicker" style="background:var(--c-class-soft);color:var(--c-class);">Social Class</span>
+              <div class="insight-title">Income bracket</div>
+              <p class="insight-sub">Self-reported spending power — useful for pricing and offer targeting.</p>
+              ${donut(r.audience.socialClassBreakdown, ['#C9971C', '#E0B94A', '#F0D687', '#8285A0', '#4A4E68'], 'PEOPLE')}
+            </div>
+          `);
+        }
+        if (r.audience.interestBreakdown.length) {
+          audienceCards.push(`
+            <div class="insight-section">
+              <span class="insight-kicker" style="background:var(--c-interest-soft);color:var(--c-interest);">Psychographics</span>
+              <div class="insight-title">Brand &amp; product interest</div>
+              <p class="insight-sub">${escapeHtml(r.audience.interestQuestion || 'What respondents actually care about.')}</p>
+              ${hbars(r.audience.interestBreakdown, 'var(--c-interest)')}
+            </div>
+          `);
+        }
+      }
+
+      content.innerHTML = `
+        <div class="insight-section" style="border-top:3px solid var(--c-score);">
+          <span class="insight-kicker" style="background:var(--c-score-soft);color:var(--c-score);">Reach &amp; Readiness</span>
+          <div class="insight-title">How the campaign performed</div>
+          <div class="stat-grid" style="margin-top:14px;">
+            <div class="stat-box"><div class="num">${r.started}</div><div class="lbl">Started</div></div>
+            <div class="stat-box"><div class="num">${r.completed}</div><div class="lbl">Completed</div></div>
+            <div class="stat-box"><div class="num">${r.completionRate === null ? '—' : r.completionRate + '%'}</div><div class="lbl">Completion rate</div></div>
+            <div class="stat-box"><div class="num">${r.completed ? r.averageOverall + '%' : '—'}</div><div class="lbl">Average score</div></div>
+            ${r.engagementMode ? `<div class="stat-box" style="border-top-color:var(--c-engage);"><div class="num">${formatDuration(r.averageTimeToCompleteSeconds)}</div><div class="lbl">Avg. time to complete</div></div>` : ''}
+          </div>
+          <p style="font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:10px;">READINESS TIER BREAKDOWN</p>
+          ${donut(tierDonutItems, tierPalette, 'PEOPLE')}
+        </div>
+
+        <div class="insight-section">
+          <span class="insight-kicker" style="background:var(--c-cat-soft);color:var(--c-cat);">Score Breakdown</span>
+          <div class="insight-title">Average score, category by category</div>
+          <p class="insight-sub">Across everyone who completed this scorecard.</p>
+          ${r.categoryAverages.map(c => `
+            <div class="hbar-row">
+              <div class="hbar-name">${escapeHtml(c.label)}</div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:${c.avgScore}%;background:var(--c-cat);"></div></div>
+              <div class="hbar-pct">${c.avgScore}%</div>
+            </div>
+          `).join('') || '<p class="chart-empty">No data yet.</p>'}
+        </div>
+
+        ${audienceCards.join('')}
+
+        ${r.engagementMode ? `
+          <div class="insight-section">
+            <span class="insight-kicker" style="background:var(--c-engage-soft);color:var(--c-engage);">Engagement</span>
+            <div class="insight-title">How engaging this campaign actually was</div>
+            <p class="insight-sub">Average time respondents spent completing it, and how many finished versus started — the real signal of an engaging experience, not just a functional one.</p>
+            <div class="stat-grid">
+              <div class="stat-box" style="border-top-color:var(--c-engage);"><div class="num">${formatDuration(r.averageTimeToCompleteSeconds)}</div><div class="lbl">Avg. completion time</div></div>
+              <div class="stat-box" style="border-top-color:var(--c-engage);"><div class="num">${r.completionRate === null ? '—' : r.completionRate + '%'}</div><div class="lbl">Finish rate</div></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="insight-section">
+          <span class="insight-kicker" style="background:var(--c-cat-soft);color:var(--c-cat);">Trend</span>
+          <div class="insight-title">Completions, last 14 days</div>
+          <div class="trend-row">
+            ${r.trend.map(t => `<div class="trend-bar" style="height:${Math.max(2, (t.count / maxTrend) * 90)}px;" title="${t.date}: ${t.count}"></div>`).join('')}
+          </div>
+          <div class="trend-labels">
+            ${r.trend.map((t, i) => `<span>${i % 2 === 0 ? t.date.slice(5) : ''}</span>`).join('')}
+          </div>
+        </div>
+
+        <div class="signal-note">
+          This is the aggregate, brand-facing view — no individual name, email, or answer ever appears here. It's the shape of report a sponsor or brand partner is shown (Signal Desk), kept separate from your own per-lead detail on the Leads page.
+        </div>
+      `;
+    })();
+  </script>
+</body>
+</html>

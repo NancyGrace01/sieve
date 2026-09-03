@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Accept invite — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="site-header">
+      <nav class="nav"><a href="/index.html" class="brand"><span class="brand-mark">S</span>Sieve</a></nav>
+    </header>
+    <div class="app-narrow">
+      <div class="auth-card">
+        <h1 style="font-size:1.6rem;margin-bottom:6px;">Join your team on Sieve</h1>
+        <p style="color:var(--ink-soft);font-size:14.5px;margin-bottom:24px;">Set a password to accept your invite.</p>
+        <div class="form-error" id="err"></div>
+        <form id="accept-form">
+          <div class="field"><label>Password</label><input type="password" id="password" minlength="8" required /></div>
+          <button class="btn btn-accent btn-block" type="submit">Accept invite</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    const token = new URLSearchParams(location.search).get('token');
+    const err = document.getElementById('err');
+    if (!token) showError(err, 'This invite link is missing its token.');
+
+    document.getElementById('accept-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError(err);
+      try {
+        await api('/auth/accept-invite', { method: 'POST', body: { token, password: document.getElementById('password').value } });
+        window.location.href = '/dashboard.html';
+      } catch (ex) {
+        showError(err, ex.message);
+      }
+    });
+  </script>
+</body>
+</html>

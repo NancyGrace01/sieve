@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — Sieve</title>
+<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="app-topbar">
+      <a href="/dashboard.html" class="brand"><span class="brand-mark">S</span>Sieve</a>
+      <div class="actions">
+        <span style="font-size:13.5px;color:var(--ink-soft);" data-user-business>…</span>
+        <a href="/team.html" class="btn btn-ghost btn-sm">Team</a>
+        <a href="/billing.html" class="btn btn-ghost btn-sm">Billing</a>
+        <button class="btn btn-ghost btn-sm" data-logout>Log out</button>
+      </div>
+    </div>
+    <main class="app-main">
+      <div class="page-head">
+        <h1>Your scorecards</h1>
+        <button class="btn btn-accent" id="new-btn">+ New scorecard</button>
+      </div>
+      <div id="content"><p style="color:var(--ink-faint);">Loading…</p></div>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    (async () => {
+      const user = await requireUser();
+      if (!user) return;
+
+      const content = document.getElementById('content');
+
+      async function load() {
+        const { scorecards } = await api('/scorecards');
+        if (!scorecards.length) {
+          content.innerHTML = `<div class="empty-state"><h3>No scorecards yet</h3><p>Create your first one to start qualifying leads.</p></div>`;
+          return;
+        }
+        content.innerHTML = `<div class="sc-grid">${scorecards.map(sc => `
+          <div class="sc-card">
+            <div class="sc-card-top">
+              <div class="sc-title">${escapeHtml(sc.title)}</div>
+              <span class="badge ${sc.published ? 'live' : 'draft'}">${sc.published ? 'Live' : 'Draft'}</span>
+            </div>
+            <div class="sc-meta">${sc.questions.length} question${sc.questions.length === 1 ? '' : 's'} · ${sc.leadCount} lead${sc.leadCount === 1 ? '' : 's'}</div>
+            <div class="sc-card-actions">
+              <a class="btn btn-ghost btn-sm" href="/builder.html?id=${sc.id}">Edit</a>
+              <a class="btn btn-ghost btn-sm" href="/leads.html?id=${sc.id}">Leads (${sc.leadCount})</a>
+              ${sc.published ? `<a class="btn btn-ghost btn-sm" href="/report.html?id=${sc.id}">Report ↗</a>` : ''}
+              ${sc.published ? `<a class="btn btn-ghost btn-sm" href="/take/index.html?slug=${sc.slug}" target="_blank">View live ↗</a>` : ''}
+            </div>
+          </div>
+        `).join('')}</div>`;
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      document.getElementById('new-btn').addEventListener('click', async () => {
+        const { scorecard } = await api('/scorecards', { method: 'POST', body: { title: 'Untitled scorecard' } });
+        window.location.href = `/builder.html?id=${scorecard.id}`;
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>
