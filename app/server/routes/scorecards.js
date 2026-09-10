@@ -1,8 +1,10 @@
 const express = require('express');
 const crypto = require('node:crypto');
+const QRCode = require('qrcode');
 const { run, get, all } = require('../db');
 const requireAuth = require('../middleware/requireAuth');
 const { AGE_RANGES, GENDERS, SOCIAL_CLASSES, LOCATIONS, sanitizeProfileCapture, parseProfileCapture } = require('../demographics');
+const { appUrl } = require('../mailer');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -319,6 +321,27 @@ router.get('/:id/leads.csv', async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${row.slug}-leads.csv"`);
     res.send(header + lines.join('\n'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// A scannable QR code pointing at this scorecard's public link — for flyers,
+// posters, or anywhere a URL/embed code isn't practical to hand someone.
+// Generated on request rather than stored, since it's just an encoding of
+// data (the slug) that already exists — nothing here needs to survive a
+// scorecard's slug ever changing. Works for an unpublished scorecard too
+// (an owner previewing/printing ahead of launch) — it'll just 404 if scanned
+// before publishing, same as the plain link would.
+router.get('/:id/qr.png', async (req, res, next) => {
+  try {
+    const row = await ownedScorecardOr404(req, res);
+    if (!row) return;
+    const link = `${appUrl()}/take/index.html?slug=${encodeURIComponent(row.slug)}`;
+    const buffer = await QRCode.toBuffer(link, { type: 'png', width: 480, margin: 1 });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `inline; filename="${row.slug}-qr.png"`);
+    res.send(buffer);
   } catch (err) {
     next(err);
   }

@@ -4,6 +4,36 @@
 // notifications, personalized results) keeps working in local dev without an
 // email account.
 
+// Every value below that ends up inside an <html> template comes from data a
+// person typed somewhere — a scorecard owner's business name or recommendation
+// copy, a respondent's own name/email, a category label. None of it is safe to
+// drop into HTML unescaped: a business name of `<script>...` or a category
+// label containing `"` would either break the layout or, worse, actually
+// execute in whatever inbox renders it. escapeHtml() is applied to every one
+// of those interpolations below — the only exception is content this file
+// itself builds server-side from fixed markup (colors, percentages, style
+// attributes), which never contains anything a user typed.
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// A URL used as an href needs two different protections: HTML-entity escaping
+// (so a `&` in the URL doesn't break the attribute), and scheme validation —
+// recommendationUrl is written by a scorecard owner in the builder, and
+// nothing stops someone from typing `javascript:...` there instead of a real
+// link. Only http/https links are ever rendered as a clickable href; anything
+// else is dropped rather than guessed at.
+function safeHref(url) {
+  const trimmed = String(url ?? '').trim();
+  if (!/^https?:\/\//i.test(trimmed)) return null;
+  return escapeHtml(trimmed);
+}
+
 async function sendEmail({ to, subject, html, attachments }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM || 'Sieve <onboarding@resend.dev>';
@@ -44,7 +74,7 @@ function passwordResetEmail(email, token) {
     to: email,
     subject: 'Reset your Sieve password',
     html: `<p>Someone requested a password reset for this account.</p>
-           <p><a href="${link}">Click here to set a new password</a> — this link expires in 1 hour.</p>
+           <p><a href="${escapeHtml(link)}">Click here to set a new password</a> — this link expires in 1 hour.</p>
            <p>If you didn't request this, you can ignore this email.</p>`,
   });
 }
@@ -54,8 +84,8 @@ function teamInviteEmail(email, businessName, token) {
   return sendEmail({
     to: email,
     subject: `You've been invited to ${businessName} on Sieve`,
-    html: `<p>You've been invited to join <strong>${businessName}</strong>'s Sieve account.</p>
-           <p><a href="${link}">Click here to accept and set a password</a> — this link expires in 3 days.</p>`,
+    html: `<p>You've been invited to join <strong>${escapeHtml(businessName)}</strong>'s Sieve account.</p>
+           <p><a href="${escapeHtml(link)}">Click here to accept and set a password</a> — this link expires in 3 days.</p>`,
   });
 }
 
@@ -64,10 +94,10 @@ function newLeadEmail(ownerEmail, scorecardTitle, lead) {
   return sendEmail({
     to: ownerEmail,
     subject: `New lead on "${scorecardTitle}" — ${lead.overall}% (${lead.tier})`,
-    html: `<p><strong>${name}</strong> just completed <strong>${scorecardTitle}</strong>.</p>
-           <p>Score: <strong>${lead.overall}%</strong> — ${lead.tier}</p>
-           ${lead.email ? `<p>Email: ${lead.email}</p>` : ''}
-           ${lead.businessName ? `<p>Business: ${lead.businessName}</p>` : ''}`,
+    html: `<p><strong>${escapeHtml(name)}</strong> just completed <strong>${escapeHtml(scorecardTitle)}</strong>.</p>
+           <p>Score: <strong>${lead.overall}%</strong> — ${escapeHtml(lead.tier)}</p>
+           ${lead.email ? `<p>Email: ${escapeHtml(lead.email)}</p>` : ''}
+           ${lead.businessName ? `<p>Business: ${escapeHtml(lead.businessName)}</p>` : ''}`,
   });
 }
 
@@ -79,7 +109,7 @@ const BAND_COLOR = { strong: '#16825D', developing: '#B3720C', weak: '#B3261E' }
 function leadResultsEmail({ to, businessName, personalization, reportUrl, pdfBuffer }) {
   const categoryRows = personalization.categoryNarratives.map(c => `
     <tr>
-      <td style="padding:6px 0;font-size:13px;color:#14162B;font-weight:600;width:140px;">${c.label}</td>
+      <td style="padding:6px 0;font-size:13px;color:#14162B;font-weight:600;width:140px;">${escapeHtml(c.label)}</td>
       <td style="padding:6px 0;">
         <div style="background:#EEEBE2;border-radius:4px;height:8px;width:160px;overflow:hidden;">
           <div style="background:${BAND_COLOR[c.band] || '#4A4E68'};height:8px;width:${c.score}%;"></div>
@@ -87,37 +117,39 @@ function leadResultsEmail({ to, businessName, personalization, reportUrl, pdfBuf
       </td>
       <td style="padding:6px 0 6px 10px;font-size:13px;font-weight:700;color:#14162B;">${c.score}%</td>
     </tr>
-    <tr><td colspan="3" style="padding:0 0 14px;font-size:13px;color:#4A4E68;">${c.message}</td></tr>
+    <tr><td colspan="3" style="padding:0 0 14px;font-size:13px;color:#4A4E68;">${escapeHtml(c.message)}</td></tr>
   `).join('');
 
   const insightsBlock = personalization.answerInsights.length
     ? `<h3 style="font-size:15px;color:#14162B;margin:24px 0 10px;">What we noticed in your answers</h3>` +
       personalization.answerInsights.map(a => `
-        <p style="margin:0 0 4px;font-size:13px;color:#14162B;font-weight:700;">${a.question}</p>
-        <p style="margin:0 0 4px;font-size:12.5px;color:#8285A0;font-style:italic;">Your answer: ${a.answer}</p>
-        <p style="margin:0 0 16px;font-size:13px;color:#4A4E68;">${a.insight}</p>
+        <p style="margin:0 0 4px;font-size:13px;color:#14162B;font-weight:700;">${escapeHtml(a.question)}</p>
+        <p style="margin:0 0 4px;font-size:12.5px;color:#8285A0;font-style:italic;">Your answer: ${escapeHtml(a.answer)}</p>
+        <p style="margin:0 0 16px;font-size:13px;color:#4A4E68;">${escapeHtml(a.insight)}</p>
       `).join('')
     : '';
 
+  const recommendationHref = safeHref(personalization.recommendationUrl);
   const ctaBlock = personalization.recommendation
-    ? `<div style="background:#FFE8DB;border-radius:10px;padding:18px 20px;margin-top:24px;">
-         <p style="margin:0 0 6px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#7A2E0E;">Recommended next step</p>
-         <p style="margin:0 0 10px;font-size:13.5px;color:#14162B;">${personalization.recommendation}</p>
-         ${personalization.recommendationUrl ? `<a href="${personalization.recommendationUrl}" style="font-size:13.5px;font-weight:700;color:#1F5FE0;">${personalization.recommendationUrl}</a>` : ''}
+    ? `<div style="background:#F7E2D3;border-radius:10px;padding:18px 20px;margin-top:24px;">
+         <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#5C220A;">Recommended next step</p>
+         <p style="margin:0 0 10px;font-size:13.5px;color:#14162B;">${escapeHtml(personalization.recommendation)}</p>
+         ${recommendationHref ? `<a href="${recommendationHref}" style="font-size:13.5px;font-weight:700;color:#1F5FE0;">${recommendationHref}</a>` : ''}
        </div>`
     : '';
 
+  const reportHref = safeHref(reportUrl);
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;">
-      <p style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#FF6B35;">${businessName || 'Sieve'}</p>
-      <h2 style="font-size:20px;color:#14162B;margin:6px 0 4px;">Hi ${personalization.greetingName}, here's your ${personalization.scorecardTitle} result</h2>
+      <p style="font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#C1501F;">${escapeHtml(businessName || 'Sieve')}</p>
+      <h2 style="font-size:20px;color:#14162B;margin:6px 0 4px;">Hi ${escapeHtml(personalization.greetingName)}, here's your ${escapeHtml(personalization.scorecardTitle)} result</h2>
       <p style="font-size:32px;font-weight:800;color:#14162B;margin:14px 0 2px;">${personalization.overall}%</p>
-      <p style="font-size:14px;font-weight:700;color:#FF6B35;margin:0 0 14px;">${personalization.tierHeadline}</p>
-      ${personalization.tierMessage ? `<p style="font-size:14px;color:#4A4E68;line-height:1.6;">${personalization.tierMessage}</p>` : ''}
+      <p style="font-size:14px;font-weight:700;color:#C1501F;margin:0 0 14px;">${escapeHtml(personalization.tierHeadline)}</p>
+      ${personalization.tierMessage ? `<p style="font-size:14px;color:#4A4E68;line-height:1.6;">${escapeHtml(personalization.tierMessage)}</p>` : ''}
       <table style="width:100%;border-collapse:collapse;margin-top:16px;">${categoryRows}</table>
       ${insightsBlock}
       ${ctaBlock}
-      ${reportUrl ? `<p style="margin-top:24px;font-size:12.5px;color:#8285A0;">You can also view this online any time: <a href="${reportUrl}" style="color:#1F5FE0;">${reportUrl}</a></p>` : ''}
+      ${reportHref ? `<p style="margin-top:24px;font-size:12.5px;color:#8285A0;">You can also view this online any time: <a href="${reportHref}" style="color:#1F5FE0;">${reportHref}</a></p>` : ''}
     </div>
   `;
 
@@ -129,4 +161,4 @@ function leadResultsEmail({ to, businessName, personalization, reportUrl, pdfBuf
   });
 }
 
-module.exports = { sendEmail, passwordResetEmail, teamInviteEmail, newLeadEmail, leadResultsEmail, appUrl };
+module.exports = { sendEmail, passwordResetEmail, teamInviteEmail, newLeadEmail, leadResultsEmail, appUrl, escapeHtml, safeHref };

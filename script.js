@@ -164,7 +164,7 @@ const SCORECARD = {
       type: 'choice',
       options: [
         { label: 'Bank transfer', score: { speed: 1 } },
-        { label: 'Card via Paystack / Flutterwave', score: { speed: 2 } },
+        { label: 'Card via Paystack', score: { speed: 2 } },
         { label: 'POS / cash on delivery', score: { speed: 1 } },
         { label: 'Mix of all the above', score: { speed: 2 } },
       ],

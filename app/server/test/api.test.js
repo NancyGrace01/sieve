@@ -241,3 +241,29 @@ test('another logged-in user cannot see or edit someone else\'s scorecard', asyn
   const res = await other.get(`/api/scorecards/${scorecardId}`);
   assert.equal(res.status, 404);
 });
+
+test('the owner can fetch a real, valid QR code PNG for their own scorecard', async () => {
+  const res = await client.rawGet(`/api/scorecards/${scorecardId}/qr.png`);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'image/png');
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  // PNG magic bytes — confirms this is a real image, not an empty or error body.
+  assert.deepEqual([...bytes.slice(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+});
+
+test('a QR code for a scorecard belonging to someone else 404s, same as viewing/editing it does', async () => {
+  const other = makeClient(server.baseUrl);
+  await other.post('/api/auth/signup', { businessName: 'Rival QR Co', email: 'rivalqr@test.com', password: 'password123' });
+  const res = await other.rawGet(`/api/scorecards/${scorecardId}/qr.png`);
+  assert.equal(res.status, 404);
+});
+
+test('server source code and env files are never reachable through the static file server', async () => {
+  // The marketing site's static serving is broad by necessity (loose files at
+  // the repo root) — this is the one thing that must never regress, since a
+  // real .env file living on the same filesystem would leak live credentials.
+  for (const path of ['/app/server/db.js', '/app/server/.env', '/app/server/routes/billing.js']) {
+    const res = await client.rawGet(path);
+    assert.equal(res.status, 404, `expected 404 for ${path}, got ${res.status}`);
+  }
+});

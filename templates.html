@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Templates — Ready-to-Go Scorecards | Sieve</title>
 <meta name="description" content="60+ Nigerian-ready scorecard templates across 20 industries — from real estate and solar to Japa relocation and diaspora finance. Start generating leads in minutes." />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<link rel="apple-touch-icon" href="/logo.png" />
 <link rel="stylesheet" href="styles.css" />
 <style>
-.tpl-thumb.c1{background:linear-gradient(135deg,#FFE8DB,#FFCBA6);}
+.tpl-thumb.c1{background:linear-gradient(135deg,#F7E2D3,#EAB088);}
 .tpl-thumb.c2{background:linear-gradient(135deg,#E6EDFC,#C4D5F9);}
 .tpl-thumb.c3{background:linear-gradient(135deg,#E1F4EC,#B9E6D2);}
 .tpl-thumb.c4{background:linear-gradient(135deg,#F4F1EA,#E6E2D8);}
@@ -24,7 +26,7 @@
 
 <header class="site-header">
   <nav class="nav">
-    <a href="index.html" class="brand"><span class="brand-mark">S</span>Sieve</a>
+    <a href="index.html" class="brand"><img src="/logo.png" class="brand-mark" alt="Sieve logo" />Sieve</a>
     <ul class="nav-links">
       <li><a href="features.html">Features</a></li>
       <li><a href="how-it-works.html">How It Works</a></li>
@@ -45,10 +47,9 @@
 
   <section class="hero" style="padding-bottom:20px;">
     <div class="container">
-      <div class="eyebrow"><span class="dot"></span> Templates</div>
       <h1 style="font-size:clamp(2.2rem,4.4vw,3.2rem);">Ready-to-go scorecard templates</h1>
       <p class="hero-sub">Start generating leads in minutes with a template built for your industry — every one adjustable, on-brand, and ready for Naira checkout.</p>
-      <div class="hero-proof">60+ templates · 20 Nigerian industries · 8-14 questions each, across 3 scoring categories · from real estate to Japa relocation</div>
+      <div class="hero-proof">Over 60 templates across 20 Nigerian industries, from real estate to Japa relocation — each with 8–14 questions across 3 scoring categories, ready to adjust and publish.</div>
     </div>
   </section>
 
@@ -362,7 +363,7 @@
   <div class="container">
     <div class="footer-top">
       <div class="footer-brand">
-        <a href="index.html" class="brand"><span class="brand-mark">S</span>Sieve</a>
+        <a href="index.html" class="brand"><img src="/logo.png" class="brand-mark" alt="Sieve logo" />Sieve</a>
         <p>Qualify leads. Know who's ready. Built for the Nigerian market, priced in Naira.</p>
       </div>
       <div class="footer-col"><h4>Product</h4>
@@ -406,7 +407,7 @@
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'tpl-use-btn';
-    btn.textContent = 'Use this template →';
+    btn.textContent = 'Use this template';
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       btn.disabled = true;
@@ -421,7 +422,7 @@
         window.location.href = `/builder.html?id=${id}`;
       } catch (ex) {
         btn.disabled = false;
-        btn.textContent = 'Use this template →';
+        btn.textContent = 'Use this template';
         alert(ex.message || 'Something went wrong — try again.');
       }
     });

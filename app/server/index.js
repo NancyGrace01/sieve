@@ -23,16 +23,31 @@ app.use('/api/public', require('./routes/public'));
 app.use('/api/billing', require('./routes/billing'));
 app.use('/api/team', require('./routes/team'));
 
+// The static-file serving below (all three roots) is broad by necessity — the
+// marketing site's assets live loose at the repo root. That means it's
+// CRITICAL nothing under app/server is ever reachable through it: that's
+// every route file, db.js, and — if a local .env file happens to exist on
+// this filesystem — real credentials (DATABASE_URL, JWT_SECRET, live payment
+// keys). Checked before any static middleware runs, so it protects all three
+// roots below regardless of their individual configuration.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/app/server')) return res.status(404).end();
+  next();
+});
+
 // Builder / dashboard app — protected in the browser by checking /api/auth/me,
 // not by the static file server (a real deploy could add server-side gating too).
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), { dotfiles: 'deny' }));
 
 // Public scorecard-taking page — shared by every published scorecard,
 // the slug is read from the URL query string on the client.
-app.use('/take', express.static(path.join(__dirname, '..', 'take')));
+app.use('/take', express.static(path.join(__dirname, '..', 'take'), { dotfiles: 'deny' }));
 
-// The original marketing site lives one level up from /app.
-app.use(express.static(path.join(__dirname, '..', '..')));
+// The original marketing site lives one level up from /app. dotfiles: 'deny'
+// here is defense-in-depth on top of the explicit app/server block above —
+// it also stops .git or any other stray dotfile at the repo root from ever
+// being served, not just app/server specifically.
+app.use(express.static(path.join(__dirname, '..', '..'), { dotfiles: 'deny' }));
 
 const PORT = process.env.PORT || 5500;
 if (require.main === module) {

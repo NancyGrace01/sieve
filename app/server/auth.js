@@ -8,6 +8,20 @@ if (!JWT_SECRET) {
 const COOKIE_NAME = 'sieve_session';
 const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// `secure` must be true once this runs behind real HTTPS (any real deployment)
+// so the session cookie is never sent over plain HTTP — but forcing it true
+// locally would silently break login, since local dev runs on plain
+// http://localhost. Set NODE_ENV=production in whatever hosts this
+// (Railway/Render/Fly all do this automatically) to turn it on.
+function cookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: COOKIE_MAX_AGE_MS,
+  };
+}
+
 // `sub` is always the ACCOUNT id (the owning row in `users`), for both the
 // owner's own login and any team member's login — every existing route that
 // resolves req.user from session.sub keeps working unchanged either way.
@@ -18,15 +32,16 @@ function signSession(accountId, memberId = null) {
 
 function setSessionCookie(res, accountId, memberId = null) {
   const token = signSession(accountId, memberId);
-  res.cookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE_MS,
-  });
+  res.cookie(COOKIE_NAME, token, cookieOptions());
 }
 
 function clearSessionCookie(res) {
-  res.clearCookie(COOKIE_NAME);
+  // Browsers only reliably clear a cookie when the clearing call's options
+  // (secure/sameSite/httpOnly) match how it was set — omitting them here
+  // worked in dev (secure was always false) but would silently fail to log
+  // people out in production once secure:true is in play.
+  const { maxAge, ...clearOptions } = cookieOptions();
+  res.clearCookie(COOKIE_NAME, clearOptions);
 }
 
 function readSession(req) {

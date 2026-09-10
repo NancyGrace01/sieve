@@ -17,7 +17,12 @@
 // then TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres
 
 const crypto = require('node:crypto');
+const path = require('node:path');
 const { Client } = require('pg');
+
+// index.js loads .env too, but only once it's required further down this
+// file — too late for the check just below. Load it here first.
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const baseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
 if (!baseUrl) {
@@ -93,6 +98,11 @@ function makeClient(baseUrl) {
     post: (path, body) => request('POST', path, body),
     put: (path, body) => request('PUT', path, body),
     del: (path) => request('DELETE', path),
+    // For binary responses (PNG/PDF) — the wrapped get() above always calls
+    // res.json(), which throws on a non-JSON body. Sends the same session
+    // cookie, but returns the raw Response so a test can read status,
+    // headers, and an arrayBuffer/blob body itself.
+    rawGet: (path) => fetch(baseUrl + path, { headers: cookie ? { Cookie: cookie } : {} }),
   };
 }
 

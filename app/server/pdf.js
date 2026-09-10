@@ -7,7 +7,7 @@ const PDFDocument = require('pdfkit');
 const BAND_COLOR = { strong: '#16825D', developing: '#B3720C', weak: '#B3261E' };
 const INK = '#14162B';
 const INK_SOFT = '#4A4E68';
-const ACCENT = '#FF6B35';
+const ACCENT = '#C1501F';
 const LINE = '#E6E2D8';
 
 function buildReportPdf(personalization, businessName) {
@@ -76,8 +76,8 @@ function buildReportPdf(personalization, businessName) {
   if (personalization.recommendation) {
     doc.moveDown(0.4);
     const boxY = doc.y;
-    doc.roundedRect(doc.x, boxY, pageWidth, 70, 8).fillColor('#FFE8DB').fill();
-    doc.fillColor('#7A2E0E').font('Helvetica-Bold').fontSize(11).text('Recommended next step', doc.x + 16, boxY + 14, { width: pageWidth - 32 });
+    doc.roundedRect(doc.x, boxY, pageWidth, 70, 8).fillColor('#F7E2D3').fill();
+    doc.fillColor('#5C220A').font('Helvetica-Bold').fontSize(11).text('Recommended next step', doc.x + 16, boxY + 14, { width: pageWidth - 32 });
     doc.fillColor(INK).font('Helvetica').fontSize(10.5).text(personalization.recommendation, doc.x + 16, boxY + 32, { width: pageWidth - 32, lineGap: 2 });
     if (personalization.recommendationUrl) {
       doc.fillColor('#1F5FE0').font('Helvetica-Bold').fontSize(10).text(personalization.recommendationUrl, doc.x + 16, boxY + 54, {
