@@ -72,7 +72,7 @@ test('submitting a profile value outside the fixed option list is rejected', asy
 test('a valid submission with profile data and timing is accepted and echoed back', async () => {
   const anon = makeClient(server.baseUrl);
   const res = await anon.post(`/api/public/scorecards/${slug}/submit`, {
-    firstName: 'Ada', answers: [0], timeToCompleteSeconds: 42,
+    firstName: 'Ada', lastName: 'Bello', phone: '08022222222', email: 'ada@example.com', answers: [0], timeToCompleteSeconds: 42,
     profile: { ageRange: '25-34', gender: 'Female', location: 'Lagos', socialClass: 'Middle income', interest: 'Skincare' },
   });
   assert.equal(res.status, 201);
@@ -84,7 +84,7 @@ test('a valid submission with profile data and timing is accepted and echoed bac
 test('a second submission with different demographics feeds the aggregate breakdown correctly', async () => {
   const anon = makeClient(server.baseUrl);
   const res = await anon.post(`/api/public/scorecards/${slug}/submit`, {
-    firstName: 'Tunde', answers: [1], timeToCompleteSeconds: 18,
+    firstName: 'Tunde', lastName: 'Adeyemi', phone: '08033333333', email: 'tunde@example.com', answers: [1], timeToCompleteSeconds: 18,
     profile: { ageRange: '18-24', gender: 'Male', location: 'Rivers', socialClass: 'Lower income', interest: 'Haircare' },
   });
   assert.equal(res.status, 201);
@@ -113,6 +113,10 @@ test('the report aggregates demographics, psychographics, and engagement correct
 });
 
 test('a scorecard with profile capture off reports an empty, disabled audience block', async () => {
+  // Same free-plan (1 scorecard) cap as api.test.js — this account already
+  // owns one scorecard from an earlier test in this file.
+  const { run } = require('../db');
+  await run("UPDATE users SET plan = 'business' WHERE email = ?", ['insight@test.com']);
   const created = await owner.post('/api/scorecards', { title: 'Plain Lead Form' });
   await owner.put(`/api/scorecards/${created.data.scorecard.id}`, {
     title: 'Plain Lead Form',

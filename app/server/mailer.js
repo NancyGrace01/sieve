@@ -132,9 +132,9 @@ function leadResultsEmail({ to, businessName, personalization, reportUrl, pdfBuf
   const recommendationHref = safeHref(personalization.recommendationUrl);
   const ctaBlock = personalization.recommendation
     ? `<div style="background:#F7E2D3;border-radius:10px;padding:18px 20px;margin-top:24px;">
-         <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#5C220A;">Recommended next step</p>
+         <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#5C220A;">${escapeHtml(personalization.ctaHeadline || 'Want to go deeper on your results?')}</p>
          <p style="margin:0 0 10px;font-size:13.5px;color:#14162B;">${escapeHtml(personalization.recommendation)}</p>
-         ${recommendationHref ? `<a href="${recommendationHref}" style="font-size:13.5px;font-weight:700;color:#1F5FE0;">${recommendationHref}</a>` : ''}
+         ${recommendationHref ? `<a href="${recommendationHref}" style="font-size:13.5px;font-weight:700;color:#1F5FE0;">${escapeHtml(personalization.recommendationLabel || 'Book Now')} →</a>` : ''}
        </div>`
     : '';
 

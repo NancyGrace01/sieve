@@ -114,6 +114,12 @@ test('publishing makes the scorecard reachable, and it hides scoring weights', a
 });
 
 test('a scorecard with no brand override falls back to the account\'s own business name', async () => {
+  // This account is on the free plan (1 scorecard cap, asserted in the signup
+  // test above) and already owns one scorecard from an earlier test in this
+  // file — bump it to a paid plan here, the same direct-DB pattern used in
+  // billing.test.js, purely so this test can create a second one.
+  const { run } = require('../db');
+  await run("UPDATE users SET plan = 'business' WHERE email = ?", ['owner@test.com']);
   const created = await ownerClient.post('/api/scorecards', { title: 'No Override Card' });
   await ownerClient.put(`/api/scorecards/${created.data.scorecard.id}`, {
     title: 'No Override Card',
@@ -132,7 +138,7 @@ let submittedLeadId;
 test('submitting the right number of answers computes a real score with personalized copy', async () => {
   const anon = makeClient(server.baseUrl);
   const res = await anon.post(`/api/public/scorecards/${slug}/submit`, {
-    firstName: 'Chidi', email: 'chidi@example.com', answers: [0],
+    firstName: 'Chidi', lastName: 'Okoro', phone: '08012345678', email: 'chidi@example.com', answers: [0],
   });
   assert.equal(res.status, 201);
   assert.ok(res.data.leadId);
@@ -217,8 +223,8 @@ test('completion rate is clamped at 100% even if completed exceeds started', asy
 
   const anon = makeClient(server.baseUrl);
   await anon.post(`/api/public/scorecards/${edgeSlug}/start`);
-  await anon.post(`/api/public/scorecards/${edgeSlug}/submit`, { answers: [0] });
-  await anon.post(`/api/public/scorecards/${edgeSlug}/submit`, { answers: [0] }); // no matching second /start
+  await anon.post(`/api/public/scorecards/${edgeSlug}/submit`, { firstName: 'A', lastName: 'B', phone: '08040000000', email: 'edge1@test.com', answers: [0] });
+  await anon.post(`/api/public/scorecards/${edgeSlug}/submit`, { firstName: 'C', lastName: 'D', phone: '08040000001', email: 'edge2@test.com', answers: [0] }); // no matching second /start
 
   const report = await ownerClient.get(`/api/scorecards/${scId}/report`);
   assert.equal(report.data.started, 1);

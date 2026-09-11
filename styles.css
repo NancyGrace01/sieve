@@ -379,6 +379,17 @@ table.compare tr:last-child td { border-bottom: none; }
 }
 .demo-opt:hover { border-color: var(--accent); background: var(--accent-soft); }
 .demo-back { font-size: 13px; font-weight: 700; color: var(--ink-faint); cursor: pointer; margin-bottom: 18px; text-align: center; }
+
+/* A scorecard's cover image (the template's own default, or the owner's own
+   upload) — shown behind the title/intro and the name/phone/email gate as one
+   continuous branded moment, not a plain form dropped in after a photo. */
+.demo-cover { background-size: cover; background-position: center; }
+.demo-cover-overlay { background: linear-gradient(180deg, rgba(10,12,26,.55), rgba(10,12,26,.82) 55%, rgba(10,12,26,.94)); }
+.demo-cover-body .demo-q, .demo-cover-body > p { color: #fff; }
+.demo-cover-body .demo-gate {
+  background: var(--surface); border-radius: var(--radius-md); padding: 22px; margin-top: 6px;
+  box-shadow: var(--shadow-lg);
+}
 .demo-gate { display: flex; flex-direction: column; gap: 14px; }
 .demo-gate input {
   width: 100%; padding: 14px 16px; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
@@ -425,9 +436,10 @@ table.compare tr:last-child td { border-bottom: none; }
 .result-insight-q { font-weight: 700; font-size: 13.5px; margin-bottom: 2px; }
 .result-insight-a { font-size: 12px; color: var(--ink-faint); font-style: italic; margin-bottom: 4px; }
 .result-insight-text { font-size: 13.5px; color: var(--ink-soft); }
-.result-cta { text-align: left; background: var(--accent-soft); border-radius: var(--radius-md); padding: 18px 20px; margin-top: 22px; }
-.result-cta-label { font-size: 13px; font-weight: 700; color: var(--accent-ink); margin-bottom: 8px; }
-.result-cta p { font-size: 14px; color: var(--ink); margin-bottom: 12px; }
+.result-cta { text-align: left; background: var(--accent-soft); border-radius: var(--radius-md); padding: 20px 22px; margin-top: 22px; }
+.result-cta-icon { font-size: 22px; margin-bottom: 6px; }
+.result-cta-headline { font-family: var(--font-display); font-size: 16.5px; font-weight: 800; color: var(--accent-ink); margin-bottom: 8px; }
+.result-cta p { font-size: 14px; color: var(--ink); margin-bottom: 14px; line-height: 1.5; }
 
 /* ---------- Utilities ---------- */
 .text-center { text-align: center; }

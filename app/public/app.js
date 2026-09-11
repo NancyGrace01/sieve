@@ -58,6 +58,7 @@ async function createScorecardFromTemplate(template) {
       categories: template.categories,
       questions: template.questions,
       tiers,
+      coverImage: template.coverImage || '',
     },
   });
   return scorecard.id;

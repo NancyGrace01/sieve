@@ -66,8 +66,13 @@
   }
 
   function renderGate() {
-    root.innerHTML = `
-      <div class="demo-body">
+    // A cover image — the template's own default, or the owner's replacement —
+    // is shown behind the title, intro, and the gate form itself, so a visitor
+    // sees one continuous branded moment before they start (not a plain form
+    // dropped in after a photo). No cover set: falls back to the plain card
+    // that already worked, nothing here ever looks broken or half-built.
+    const cover = scorecard.coverImage && scorecard.coverImage.trim();
+    const gateInner = `
         <div class="demo-q" style="margin-bottom:10px;">${escapeHtml(scorecard.title)}</div>
         <p style="text-align:center;color:var(--ink-soft);font-size:14.5px;margin-bottom:26px;">${escapeHtml(scorecard.intro || '')}</p>
         <div class="demo-gate">
@@ -81,8 +86,12 @@
           <button class="btn btn-accent btn-block" id="g-start">Start →</button>
           <p id="g-error" class="demo-gate-error" style="display:none;"></p>
         </div>
-      </div>
     `;
+    root.innerHTML = cover
+      ? `<div class="demo-cover" style="background-image:url('${escapeHtml(cover)}');">
+           <div class="demo-cover-overlay"><div class="demo-body demo-cover-body">${gateInner}</div></div>
+         </div>`
+      : `<div class="demo-body">${gateInner}</div>`;
     document.getElementById('g-start').addEventListener('click', () => {
       const errorEl = document.getElementById('g-error');
       errorEl.style.display = 'none';
@@ -237,9 +246,10 @@
 
     const ctaBlock = p.recommendation ? `
       <div class="result-cta">
-        <div class="result-cta-label">Recommended next step</div>
+        <div class="result-cta-icon">👋</div>
+        <div class="result-cta-headline">${escapeHtml(p.ctaHeadline || 'Want to go deeper on your results?')}</div>
         <p>${escapeHtml(p.recommendation)}</p>
-        ${p.recommendationUrl ? `<a href="${escapeHtml(p.recommendationUrl)}" class="btn btn-accent btn-sm" target="_blank" rel="noopener">Take me there →</a>` : ''}
+        ${p.recommendationUrl ? `<a href="${escapeHtml(p.recommendationUrl)}" class="btn btn-accent btn-sm" target="_blank" rel="noopener">${escapeHtml(p.recommendationLabel || 'Book Now')} →</a>` : ''}
       </div>
     ` : '';
 

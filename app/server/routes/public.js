@@ -123,6 +123,7 @@ router.get('/scorecards/:slug', async (req, res, next) => {
       title: row.title,
       intro: row.intro,
       brandName: await resolveBrandName(row),
+      coverImage: row.cover_image || '',
       engagementMode: !!row.engagement_mode,
       shareTemplate: row.share_template || '',
       profileCapture: publicProfileCapture(row),

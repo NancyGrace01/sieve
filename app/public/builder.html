@@ -32,6 +32,12 @@
             <label>Brand name shown on this scorecard (optional)</label>
             <input type="text" id="brand-name" placeholder="Defaults to your account name — set this when building on behalf of a client" />
           </div>
+          <div class="field">
+            <label>Cover image (optional)</label>
+            <input type="url" id="cover-image" placeholder="Paste an image URL — shown behind the intro and the name/phone/email gate" />
+            <div id="cover-preview" class="cover-preview" style="display:none;"><img id="cover-preview-img" alt="Cover preview" /></div>
+            <p class="builder-hint" style="margin-top:6px;">A template already comes with a default cover — paste your own link here to replace it with your own photo or brand image.</p>
+          </div>
         </div>
 
         <div class="builder-section">
@@ -158,7 +164,20 @@
       document.getElementById('title').value = state.title;
       document.getElementById('intro').value = state.intro;
       document.getElementById('brand-name').value = state.brandName || '';
+      document.getElementById('cover-image').value = state.coverImage || '';
+      renderCoverPreview();
       renderInsightSettings();
+    }
+
+    function renderCoverPreview() {
+      const wrap = document.getElementById('cover-preview');
+      const img = document.getElementById('cover-preview-img');
+      if (state.coverImage && state.coverImage.trim()) {
+        img.src = state.coverImage.trim();
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+      }
     }
 
     function renderInsightSettings() {
@@ -296,16 +315,19 @@
             <input type="text" data-tier-headline="${i}" value="${escapeAttr(t.headline || '')}" placeholder="e.g. You're ready to move" /></div>
           <div class="field"><label>Message (optional — auto-written if left blank)</label>
             <textarea data-tier-message="${i}" placeholder="A sentence or two that speaks directly to someone who lands in this tier.">${escapeHtml(t.message || '')}</textarea></div>
-          <div class="field"><label>Recommended next step (optional — no recommendation shows unless you write one)</label>
-            <textarea data-tier-rec="${i}" placeholder="Tie this to what you actually sell — e.g. 'Book a viewing with us this week.'">${escapeHtml(t.recommendation || '')}</textarea></div>
+          <div class="field"><label>Recommended next step — the invitation shown with this (optional — no CTA block shows unless you write one)</label>
+            <textarea data-tier-rec="${i}" placeholder="Tie this to what you actually sell — e.g. 'Let's talk through what this means for you and map out your next move.'">${escapeHtml(t.recommendation || '')}</textarea></div>
           <div class="field"><label>Link</label>
             <input type="url" data-tier-url="${i}" value="${escapeAttr(t.recommendationUrl || '')}" placeholder="https://" /></div>
+          <div class="field"><label>Button text (optional — defaults to "Book Now")</label>
+            <input type="text" data-tier-label="${i}" value="${escapeAttr(t.recommendationLabel || '')}" placeholder="Book Now" /></div>
         </div>
       `).join('');
       el.querySelectorAll('[data-tier-headline]').forEach(input => input.addEventListener('input', e => { state.tiers[+e.target.dataset.tierHeadline].headline = e.target.value; }));
       el.querySelectorAll('[data-tier-message]').forEach(ta => ta.addEventListener('input', e => { state.tiers[+e.target.dataset.tierMessage].message = e.target.value; }));
       el.querySelectorAll('[data-tier-rec]').forEach(ta => ta.addEventListener('input', e => { state.tiers[+e.target.dataset.tierRec].recommendation = e.target.value; }));
       el.querySelectorAll('[data-tier-url]').forEach(input => input.addEventListener('input', e => { state.tiers[+e.target.dataset.tierUrl].recommendationUrl = e.target.value; }));
+      el.querySelectorAll('[data-tier-label]').forEach(input => input.addEventListener('input', e => { state.tiers[+e.target.dataset.tierLabel].recommendationLabel = e.target.value; }));
     }
 
     function renderPublish() {
@@ -366,7 +388,7 @@
           method: 'PUT',
           body: {
             title: state.title, intro: state.intro, categories: state.categories, questions: state.questions,
-            tiers: state.tiers, brandName: state.brandName, profileCapture: state.profileCapture,
+            tiers: state.tiers, brandName: state.brandName, coverImage: state.coverImage, profileCapture: state.profileCapture,
             engagementMode: state.engagementMode, shareTemplate: state.shareTemplate,
           },
         });
@@ -391,6 +413,7 @@
       document.getElementById('title').addEventListener('input', (e) => { state.title = e.target.value; });
       document.getElementById('intro').addEventListener('input', (e) => { state.intro = e.target.value; });
       document.getElementById('brand-name').addEventListener('input', (e) => { state.brandName = e.target.value; });
+      document.getElementById('cover-image').addEventListener('input', (e) => { state.coverImage = e.target.value; renderCoverPreview(); });
 
       document.getElementById('pc-enabled').addEventListener('change', (e) => {
         state.profileCapture.enabled = e.target.checked;

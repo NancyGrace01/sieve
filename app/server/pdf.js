@@ -72,19 +72,22 @@ function buildReportPdf(personalization, businessName) {
     });
   }
 
-  // Recommendation / CTA
+  // Recommendation / CTA — same headline, body, and button label as the
+  // on-screen result and the email, per personalize.js's shared output.
   if (personalization.recommendation) {
     doc.moveDown(0.4);
     const boxY = doc.y;
-    doc.roundedRect(doc.x, boxY, pageWidth, 70, 8).fillColor('#F7E2D3').fill();
-    doc.fillColor('#5C220A').font('Helvetica-Bold').fontSize(11).text('Recommended next step', doc.x + 16, boxY + 14, { width: pageWidth - 32 });
-    doc.fillColor(INK).font('Helvetica').fontSize(10.5).text(personalization.recommendation, doc.x + 16, boxY + 32, { width: pageWidth - 32, lineGap: 2 });
+    const boxHeight = 92;
+    doc.roundedRect(doc.x, boxY, pageWidth, boxHeight, 8).fillColor('#F7E2D3').fill();
+    doc.fillColor('#5C220A').font('Helvetica-Bold').fontSize(11)
+      .text(personalization.ctaHeadline || 'Want to go deeper on your results?', doc.x + 16, boxY + 14, { width: pageWidth - 32 });
+    doc.fillColor(INK).font('Helvetica').fontSize(10.5).text(personalization.recommendation, doc.x + 16, doc.y + 4, { width: pageWidth - 32, lineGap: 2 });
     if (personalization.recommendationUrl) {
-      doc.fillColor('#1F5FE0').font('Helvetica-Bold').fontSize(10).text(personalization.recommendationUrl, doc.x + 16, boxY + 54, {
+      doc.fillColor('#1F5FE0').font('Helvetica-Bold').fontSize(10).text(`${personalization.recommendationLabel || 'Book Now'} — ${personalization.recommendationUrl}`, doc.x + 16, boxY + boxHeight - 18, {
         link: personalization.recommendationUrl, underline: true,
       });
     }
-    doc.y = boxY + 82;
+    doc.y = boxY + boxHeight + 12;
   }
 
   doc.end();

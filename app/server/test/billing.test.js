@@ -65,7 +65,7 @@ test('a scorecard is unavailable to new visitors once credits are exhausted, and
 
   const anon = makeClient(server.baseUrl);
   for (let i = 0; i < 2; i += 1) {
-    const res = await anon.post(`/api/public/scorecards/${slug}/submit`, { firstName: 'X', answers: [0] });
+    const res = await anon.post(`/api/public/scorecards/${slug}/submit`, { firstName: 'X', lastName: 'Y', phone: '08010000000', email: `credit-lead-${i}@test.com`, answers: [0] });
     assert.equal(res.status, 201, `submission ${i} should succeed while credits remain`);
   }
 
@@ -103,7 +103,7 @@ test('cpl mode: saving a card (simulated) activates it, and a qualified lead fir
   await other.post(`/api/scorecards/${scorecardId}/publish`, { published: true });
 
   const anon = makeClient(server.baseUrl);
-  const submit = await anon.post(`/api/public/scorecards/${slug}/submit`, { firstName: 'Lead', answers: [0] });
+  const submit = await anon.post(`/api/public/scorecards/${slug}/submit`, { firstName: 'Lead', lastName: 'Person', phone: '08011111111', email: 'cpl-lead@test.com', answers: [0] });
   assert.equal(submit.status, 201);
 
   // The charge is fired fire-and-forget right after the response — give it a tick.

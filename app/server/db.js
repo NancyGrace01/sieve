@@ -89,6 +89,10 @@ async function migrate() {
       questions TEXT NOT NULL DEFAULT '[]',
       tiers TEXT NOT NULL DEFAULT '[{"min":75,"label":"Sales-ready"},{"min":50,"label":"Getting there"},{"min":0,"label":"Building the basics"}]',
       brand_name TEXT,
+      -- A photo/graphic shown behind the intro screen and the name/phone/email
+      -- gate on the public taking page (a URL — either pasted by the owner or a
+      -- template's own default). Never required — the take flow works with none.
+      cover_image TEXT,
       -- JSON: {enabled, captureAge, captureGender, captureLocation, captureSocialClass,
       -- interestQuestion, interestOptions:[]} — powers the Brand Campaign Insight Report.
       profile_capture TEXT NOT NULL DEFAULT '{"enabled":false}',
@@ -209,6 +213,13 @@ async function migrate() {
   const leadColumns = new Set(existingLeadCols.map((c) => c.column_name));
   if (!leadColumns.has('phone')) {
     await pool.query(`ALTER TABLE leads ADD COLUMN phone TEXT`);
+  }
+  const { rows: existingScorecardCols } = await pool.query(`
+    SELECT column_name FROM information_schema.columns WHERE table_name = 'scorecards'
+  `);
+  const scorecardColumns = new Set(existingScorecardCols.map((c) => c.column_name));
+  if (!scorecardColumns.has('cover_image')) {
+    await pool.query(`ALTER TABLE scorecards ADD COLUMN cover_image TEXT`);
   }
 }
 

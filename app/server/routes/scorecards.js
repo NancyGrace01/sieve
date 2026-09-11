@@ -36,6 +36,7 @@ function serialize(row) {
     questions: JSON.parse(row.questions),
     tiers: JSON.parse(row.tiers),
     brandName: row.brand_name || '',
+    coverImage: row.cover_image || '',
     profileCapture: parseProfileCapture(row.profile_capture),
     engagementMode: !!row.engagement_mode,
     shareTemplate: row.share_template || '',
@@ -115,7 +116,7 @@ router.put('/:id', async (req, res, next) => {
     const row = await ownedScorecardOr404(req, res);
     if (!row) return;
 
-    const { title, intro, categories, questions, tiers, brandName, profileCapture, engagementMode, shareTemplate } = req.body || {};
+    const { title, intro, categories, questions, tiers, brandName, coverImage, profileCapture, engagementMode, shareTemplate } = req.body || {};
     if (!Array.isArray(categories) || !categories.length) {
       return res.status(400).json({ error: 'A scorecard needs at least one scoring category.' });
     }
@@ -130,7 +131,7 @@ router.put('/:id', async (req, res, next) => {
 
     await run(
       `UPDATE scorecards SET title = ?, intro = ?, categories = ?, questions = ?, tiers = ?, brand_name = ?,
-       profile_capture = ?, engagement_mode = ?, share_template = ?, updated_at = now()::text WHERE id = ?`,
+       cover_image = ?, profile_capture = ?, engagement_mode = ?, share_template = ?, updated_at = now()::text WHERE id = ?`,
       [
         title || row.title,
         intro ?? row.intro,
@@ -138,6 +139,7 @@ router.put('/:id', async (req, res, next) => {
         JSON.stringify(questions),
         JSON.stringify(tiers && tiers.length ? tiers : JSON.parse(row.tiers)),
         (brandName && brandName.trim()) || null,
+        (coverImage && coverImage.trim()) || null,
         JSON.stringify(sanitizeProfileCapture(profileCapture)),
         engagementMode ? 1 : 0,
         (shareTemplate && shareTemplate.trim()) || null,

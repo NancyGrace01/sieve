@@ -43,48 +43,41 @@ function bandFor(score) {
 
 // --- Category commentary -----------------------------------------------
 
+// Full, coaching-style paragraphs rather than one-liners — the point is that a
+// respondent reads this and feels like a real person looked at their answers,
+// not that a form ran a formula on them. Each still ends on a forward-looking
+// note (what this means, or what to do about it), matching what makes a
+// result feel like genuine help rather than a verdict.
 const CATEGORY_BASE = {
   exceptional: [
-    l => `${l} is firing on all cylinders — genuinely one of the strongest areas here.`,
-    l => `There's very little to fault in ${l.toLowerCase()} — this is close to as good as it gets.`,
-    l => `${l} stands out as a real strength, well above where most people land.`,
-    l => `Whatever's driving ${l.toLowerCase()} right now, it's clearly working — keep doing it.`,
-    l => `${l} is in excellent shape — this is the part of the picture that needs the least attention.`,
+    l => `${l} is firing on all cylinders — genuinely one of the strongest parts of this whole result. It's clear you've already put real thought into this, and it shows in how consistently your answers pointed the same direction. Whatever you're doing here, it's working — the priority now is protecting it, not fixing it.`,
+    l => `There's very little to fault in ${l.toLowerCase()} — this is close to as good as it gets at this stage. It's the kind of foundation that makes everything else easier to build on, so it's worth recognising rather than taking for granted. Keep doing what got you here.`,
+    l => `${l} stands out as a real strength, well above where most people land on this. That's not an accident — it usually reflects real preparation and honest self-awareness going in. From here, the smartest move is simply not to let this slip while you focus energy elsewhere.`,
   ],
   strong: [
-    l => `${l} is in good shape — solidly ahead of where most people sit.`,
-    l => `You're doing well on ${l.toLowerCase()}, with just a little more headroom above you.`,
-    l => `${l} is a genuine strength — a small push here would put it in the top tier.`,
-    l => `There's real strength in ${l.toLowerCase()} already — nothing urgent needed here.`,
-    l => `${l} is comfortably ahead of the curve.`,
+    l => `${l} is in good shape — solidly ahead of where most people sit at this point. You're clearly not starting from zero here, and that head start matters more than it might feel like right now. A little more focused attention would be enough to push this from good to genuinely excellent.`,
+    l => `You're doing well on ${l.toLowerCase()}, with just a little more headroom above you. This is a real strength worth building on rather than a gap that needs urgent fixing. The next honest step is deciding whether to lean further into it or shift your energy toward whatever's holding the rest of the picture back.`,
+    l => `${l} is a genuine strength — a small, deliberate push here would put it firmly in the top tier. There's nothing urgent to fix, which is exactly why this is a good place to keep investing a little more. It's already carrying real weight in your overall result.`,
   ],
   solid: [
-    l => `${l} is respectable — not a weak point, but not yet a standout either.`,
-    l => `You're right around the middle on ${l.toLowerCase()} — steady, with clear room to push further.`,
-    l => `${l} sits in reasonably good territory, with a realistic path to genuinely strong.`,
-    l => `Nothing alarming about ${l.toLowerCase()} — it's holding its own, and could still improve.`,
-    l => `${l} is on solid footing, without yet being a real strength.`,
+    l => `${l} is respectable — not a weak point, but not yet a standout either. This is the kind of area that's easy to overlook precisely because nothing about it is alarming, but there's a realistic, achievable path from here to genuinely strong. A bit of deliberate focus would move this meaningfully.`,
+    l => `You're right around the middle on ${l.toLowerCase()} — steady, with clear room to push further. Nothing here is holding you back in any dramatic way, but it's also not yet doing the heavy lifting it could be. Worth a closer look next, once anything more urgent is handled.`,
+    l => `${l} sits in reasonably good territory, with a realistic path to genuinely strong from here. It's neither the reason you'd hesitate nor the reason you'd feel fully confident — which usually means it just hasn't had focused attention yet. That makes it one of the more straightforward things to improve.`,
   ],
   developing: [
-    l => `${l} is still finding its footing — there's real, achievable room to grow here.`,
-    l => `${l} is a fair way off where it could be — worth some deliberate attention.`,
-    l => `You're behind where you'd want to be on ${l.toLowerCase()}, but it's a fixable gap, not a fundamental one.`,
-    l => `${l} is currently a soft spot — closing this gap would move the whole picture meaningfully.`,
-    l => `There's a noticeable shortfall in ${l.toLowerCase()} right now — the good news is that's usually the easiest kind to close.`,
+    l => `${l} is still finding its footing — there's real, achievable room to grow here, and that's genuinely good news. Gaps at this stage are almost always about attention, not ability — this isn't a fundamental problem, it's an unfinished one. Naming it clearly, like this result just did, is usually the hardest part.`,
+    l => `${l} is a fair way off where it could be, and it's worth some deliberate, honest attention rather than being left to sort itself out. The encouraging part is that this kind of gap tends to close faster than people expect once it's actually being worked on. Right now it's likely quietly weighing on the rest of your picture.`,
+    l => `You're behind where you'd want to be on ${l.toLowerCase()}, but it's a fixable gap, not a fundamental one. Most people carry at least one area like this — the difference is what happens next. Closing even part of this gap would change how the whole result feels, not just this one number.`,
   ],
   weak: [
-    l => `${l} is genuinely lagging — this is worth real, focused attention.`,
-    l => `${l} is one of the clearer weak points in the picture right now.`,
-    l => `There's a real gap in ${l.toLowerCase()} — closing even part of it would change the overall result noticeably.`,
-    l => `${l} is well below where it needs to be — not a small tweak, a real focus area.`,
-    l => `${l} stands out as an area that needs deliberate work, not just a passing glance.`,
+    l => `${l} is genuinely lagging, and this is worth real, focused attention rather than a passing glance. It's one of the clearer weak points in the picture right now, and it's likely shaping how the rest of this feels more than any single answer suggests on its own. The honest read: this deserves to move up your priority list.`,
+    l => `There's a real gap in ${l.toLowerCase()} — closing even part of it would change the overall result noticeably. This isn't about anything being wrong with you; it usually just means this area hasn't had the attention the rest has. Naming it plainly is the first useful step toward actually closing it.`,
+    l => `${l} is well below where it needs to be — not a small tweak, a real focus area. It's easy to let a gap like this sit quietly in the background, but it's very likely doing more to hold back the overall picture than it seems. Worth treating as a genuine priority, not an afterthought.`,
   ],
   struggling: [
-    l => `${l} is the clearest problem area in this result — and the one most worth addressing first.`,
-    l => `${l} is significantly behind — this is where the biggest single improvement is available.`,
-    l => `There's a real shortfall in ${l.toLowerCase()} that's dragging on the overall picture.`,
-    l => `${l} needs the most attention of everything measured here.`,
-    l => `${l} is currently the weakest link — and the one place effort would pay off the most.`,
+    l => `${l} is the clearest problem area in this whole result — and honestly, the one most worth addressing first. That's not meant as discouraging; it's the opposite; it means you now know exactly where the biggest single improvement is sitting, waiting to be made. Everything else in this result would likely look different once this gets real attention.`,
+    l => `There's a real shortfall in ${l.toLowerCase()} that's dragging on the overall picture more than any other single factor here. This is the part of the result that calls for a genuine reset rather than a minor adjustment. The upside of a clear result like this is that there's no guesswork about where to start.`,
+    l => `${l} needs the most attention of everything measured here, and it's worth being honest about that rather than smoothing it over. A result like this is uncomfortable to read, but it's also the most useful kind — it points straight at what would move the needle most. This is exactly the kind of thing worth talking through with someone who's helped others close a gap like it.`,
   ],
 };
 
@@ -204,6 +197,25 @@ const ANSWER_INSIGHT = {
   ],
 };
 
+// --- The recommendation block's own headline — addressed to the respondent
+// by name, matching the reference behaviour: a plain "Recommended next step"
+// label reads like a form footer, a question with their own name in it reads
+// like an invitation. Still only ever shown alongside an owner-written
+// recommendation (see buildPersonalizedResult) — nothing here invents the
+// booking page or WhatsApp number behind it. -----------------------------
+
+const CTA_HEADLINE = [
+  n => `Would you like to gain deeper insights on your results, ${n}?`,
+  n => `Want to go deeper on what this actually means, ${n}?`,
+  n => `Ready to turn this into a real next step, ${n}?`,
+  n => `${n}, want a second pair of eyes on what this result actually means for you?`,
+];
+
+function ctaHeadline(firstName, seed) {
+  const fn = pick(`${seed}:ctaHeadline`, CTA_HEADLINE);
+  return fn(firstName);
+}
+
 function answerInsight(questionText, chosenLabel, rankFraction, seed) {
   let position;
   if (rankFraction <= 0.15) position = 'best';
@@ -277,6 +289,7 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
   // recommendation for this tier, no recommendation block shows at all.
   const recommendation = (tierConfig.recommendation && tierConfig.recommendation.trim()) || '';
   const recommendationUrl = (tierConfig.recommendationUrl && tierConfig.recommendationUrl.trim()) || '';
+  const recommendationLabel = (tierConfig.recommendationLabel && tierConfig.recommendationLabel.trim()) || 'Book Now';
 
   return {
     greetingName: firstName,
@@ -287,6 +300,10 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
     tierMessage: ownerMessage || tierMessage(overall, strongest.label, weakest.label, `${seedBase}:tier`),
     recommendation,
     recommendationUrl,
+    recommendationLabel,
+    // Only meaningful once there's an actual recommendation to sit next to —
+    // take.js only renders the CTA block at all when `recommendation` is set.
+    ctaHeadline: recommendation ? ctaHeadline(firstName, `${seedBase}:cta`) : '',
     categoryNarratives,
     answerInsights,
   };

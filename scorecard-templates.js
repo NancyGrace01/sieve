@@ -11,6 +11,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Real Estate ----------
   'property-buyer-readiness-scorecard': {
     title: 'Property Buyer Readiness Scorecard',
+    coverImage: '/covers/property-buyer-readiness-scorecard.svg',
     intro: 'A few honest questions about where you really are with your next move.',
     categories: [{ key: 'budget', label: 'Financial confidence' }, { key: 'timeline', label: 'Urgency' }, { key: 'certainty', label: 'Decision clarity' }],
     questions: [
@@ -70,6 +71,7 @@ window.SIEVE_TEMPLATES = {
   },
   'rental-tenant-screening-quiz': {
     title: 'Rental Tenant Screening Quiz',
+    coverImage: '/covers/rental-tenant-screening-quiz.svg',
     intro: 'A few honest questions about your search so far, and what’s actually been getting in the way.',
     categories: [{ key: 'budget', label: 'Budget fit' }, { key: 'readiness', label: 'Move-in readiness' }, { key: 'stability', label: 'Situation stability' }],
     questions: [
@@ -119,6 +121,7 @@ window.SIEVE_TEMPLATES = {
   },
   'property-investment-assessment': {
     title: 'Property Investment Assessment',
+    coverImage: '/covers/property-investment-assessment.svg',
     intro: 'A short, honest look at where you really stand as an investor — not just the numbers.',
     categories: [{ key: 'capital', label: 'Capital readiness' }, { key: 'goals', label: 'Investment clarity' }, { key: 'risk', label: 'Risk appetite' }],
     questions: [
@@ -185,6 +188,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Finance & Insurance ----------
   'business-financial-health-check': {
     title: 'Business Financial Health Check',
+    coverImage: '/covers/business-financial-health-check.svg',
     intro: 'An honest look at how your business really feels financially, month to month.',
     categories: [{ key: 'cashflow', label: 'Cash flow confidence' }, { key: 'records', label: 'Financial visibility' }, { key: 'stress', label: 'Financial stress' }],
     questions: [
@@ -254,6 +258,7 @@ window.SIEVE_TEMPLATES = {
   },
   'insurance-needs-analysis': {
     title: 'Insurance Needs Analysis',
+    coverImage: '/covers/insurance-needs-analysis.svg',
     intro: 'A few honest questions about the risks you actually worry about.',
     categories: [{ key: 'exposure', label: 'Risk exposure' }, { key: 'coverage', label: 'Current coverage' }, { key: 'peace', label: 'Peace of mind' }],
     questions: [
@@ -308,6 +313,7 @@ window.SIEVE_TEMPLATES = {
   },
   'the-tax-savings-scorecard': {
     title: 'The Tax Savings Scorecard',
+    coverImage: '/covers/the-tax-savings-scorecard.svg',
     intro: 'A few honest questions about how tax season actually feels for your business.',
     categories: [{ key: 'compliance', label: 'Compliance confidence' }, { key: 'planning', label: 'Tax planning' }, { key: 'anxiety', label: 'Tax anxiety' }],
     questions: [
@@ -364,6 +370,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- IT & Cybersecurity ----------
   'cybersecurity-risk-score': {
     title: 'Cybersecurity Risk Score',
+    coverImage: '/covers/cybersecurity-risk-score.svg',
     intro: 'An honest look at how exposed your business actually is, not just a checklist.',
     categories: [{ key: 'protection', label: 'Protection' }, { key: 'awareness', label: 'Team awareness' }, { key: 'fear', label: 'Breach anxiety' }],
     questions: [
@@ -433,6 +440,7 @@ window.SIEVE_TEMPLATES = {
   },
   'do-you-need-a-managed-it-provider': {
     title: 'Do You Need a Managed IT Provider?',
+    coverImage: '/covers/do-you-need-a-managed-it-provider.svg',
     intro: 'Answer honestly — this is about what actually happens when things break, not a sales pitch.',
     categories: [{ key: 'capacity', label: 'IT capacity' }, { key: 'risk', label: 'Downtime risk' }, { key: 'frustration', label: 'Team frustration' }],
     questions: [
@@ -487,6 +495,7 @@ window.SIEVE_TEMPLATES = {
   },
   'could-your-business-survive-an-it-outage': {
     title: 'Could Your Business Survive an IT Outage?',
+    coverImage: '/covers/could-your-business-survive-an-it-outage.svg',
     intro: 'A gut-check on what would actually happen if the worst-case scenario hit today.',
     categories: [{ key: 'backup', label: 'Backup & recovery' }, { key: 'continuity', label: 'Continuity planning' }, { key: 'dread', label: 'Outage dread' }],
     questions: [
@@ -548,6 +557,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Coaching & Consulting ----------
   'the-entrepreneur-skills-test': {
     title: 'The Entrepreneur Skills Test',
+    coverImage: '/covers/the-entrepreneur-skills-test.svg',
     intro: 'An honest benchmark of where you really stand as a founder right now.',
     categories: [{ key: 'execution', label: 'Execution' }, { key: 'strategy', label: 'Strategic clarity' }, { key: 'doubt', label: 'Self-doubt' }],
     questions: [
@@ -612,6 +622,7 @@ window.SIEVE_TEMPLATES = {
   },
   '1-2-1-strategy-session': {
     title: '1-2-1 Strategy Session',
+    coverImage: '/covers/1-2-1-strategy-session.svg',
     intro: 'A few honest questions so this conversation actually gets to the heart of it.',
     categories: [{ key: 'urgency', label: 'Urgency' }, { key: 'budget', label: 'Investment readiness' }, { key: 'stuck', label: 'Feeling stuck' }],
     questions: [
@@ -661,6 +672,7 @@ window.SIEVE_TEMPLATES = {
   },
   'business-growth-readiness-scorecard': {
     title: 'Business Growth Readiness Scorecard',
+    coverImage: '/covers/business-growth-readiness-scorecard.svg',
     intro: 'An honest look at what’s actually holding your business back from the next level.',
     categories: [{ key: 'systems', label: 'Systems & process' }, { key: 'capacity', label: 'Team capacity' }, { key: 'friction', label: 'Growth friction' }],
     questions: [
@@ -742,6 +754,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- HR & Recruitment ----------
   'candidate-pre-screening-assessment': {
     title: 'Candidate Pre-Screening Assessment',
+    coverImage: '/covers/candidate-pre-screening-assessment.svg',
     intro: 'A few honest questions about where you actually are in your career search.',
     categories: [{ key: 'experience', label: 'Relevant experience' }, { key: 'availability', label: 'Availability' }, { key: 'motivation', label: 'Motivation' }],
     questions: [
@@ -796,6 +809,7 @@ window.SIEVE_TEMPLATES = {
   },
   'talent-fit-check-assessment': {
     title: 'Talent Fit Check Assessment',
+    coverImage: '/covers/talent-fit-check-assessment.svg',
     intro: 'A few honest questions about what’s actually going on with this hire.',
     categories: [{ key: 'clarity', label: 'Role clarity' }, { key: 'urgency', label: 'Hiring urgency' }, { key: 'pain', label: 'Hiring pain' }],
     questions: [
@@ -850,6 +864,7 @@ window.SIEVE_TEMPLATES = {
   },
   'how-strong-is-your-company-culture': {
     title: 'How Strong Is Your Company Culture?',
+    coverImage: '/covers/how-strong-is-your-company-culture.svg',
     intro: 'An honest look at what it actually feels like to work at your company.',
     categories: [{ key: 'retention', label: 'Retention' }, { key: 'engagement', label: 'Engagement' }, { key: 'trust', label: 'Leadership trust' }],
     questions: [
@@ -911,6 +926,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Fitness & Wellness ----------
   'fitness-goals-assessment': {
     title: 'Fitness Goals Assessment',
+    coverImage: '/covers/fitness-goals-assessment.svg',
     intro: 'A few honest questions about how you actually feel in your body right now.',
     categories: [{ key: 'commitment', label: 'Commitment' }, { key: 'clarity', label: 'Goal clarity' }, { key: 'frustration', label: 'Body frustration' }],
     questions: [
@@ -970,6 +986,7 @@ window.SIEVE_TEMPLATES = {
   },
   'the-personalised-nutrition-audit': {
     title: 'The Personalised Nutrition Audit',
+    coverImage: '/covers/the-personalised-nutrition-audit.svg',
     intro: 'A few honest questions about your actual relationship with food.',
     categories: [{ key: 'habits', label: 'Current habits' }, { key: 'goals', label: 'Nutrition clarity' }, { key: 'guilt', label: 'Food guilt' }],
     questions: [
@@ -1029,6 +1046,7 @@ window.SIEVE_TEMPLATES = {
   },
   'the-which-pt-scorecard': {
     title: 'The Which PT Scorecard',
+    coverImage: '/covers/the-which-pt-scorecard.svg',
     intro: 'A few honest questions to find the coach who’ll actually work for you.',
     categories: [{ key: 'style', label: 'Training style' }, { key: 'schedule', label: 'Schedule fit' }, { key: 'accountability', label: 'Accountability need' }],
     questions: [
@@ -1080,6 +1098,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Events & Waitlists ----------
   'join-the-waitlist-new-cohort': {
     title: 'Join the Waitlist — New Cohort',
+    coverImage: '/covers/join-the-waitlist-new-cohort.svg',
     intro: 'A few honest questions about what’s actually bringing you here.',
     categories: [{ key: 'intent', label: 'Purchase intent' }, { key: 'timing', label: 'Timing' }, { key: 'need', label: 'Underlying need' }],
     questions: [
@@ -1129,6 +1148,7 @@ window.SIEVE_TEMPLATES = {
   },
   'free-masterclass-registration': {
     title: 'Free Masterclass Registration',
+    coverImage: '/covers/free-masterclass-registration.svg',
     intro: 'A few honest questions about what’s bringing you to this session.',
     categories: [{ key: 'relevance', label: 'Topic relevance' }, { key: 'intent', label: 'Follow-through intent' }, { key: 'struggle', label: 'Current struggle' }],
     questions: [
@@ -1178,6 +1198,7 @@ window.SIEVE_TEMPLATES = {
   },
   'event-sponsorship-interest-form': {
     title: 'Event Sponsorship Interest Form',
+    coverImage: '/covers/event-sponsorship-interest-form.svg',
     intro: 'A few honest questions about what sponsorship is actually meant to do for you.',
     categories: [{ key: 'budget', label: 'Sponsorship budget' }, { key: 'fit', label: 'Audience fit' }, { key: 'pressure', label: 'Growth pressure' }],
     questions: [
@@ -1234,6 +1255,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Solar & Power ----------
   'solar-readiness-assessment': {
     title: 'Solar Readiness Assessment',
+    coverImage: '/covers/solar-readiness-assessment.svg',
     intro: 'A few honest questions about what power problems are actually costing you.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'suitability', label: 'Property suitability' }, { key: 'pain', label: 'Power pain' }],
     questions: [
@@ -1298,6 +1320,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-power-solution-fits-you': {
     title: 'Which Power Solution Fits You?',
+    coverImage: '/covers/which-power-solution-fits-you.svg',
     intro: 'A few honest questions about how power problems actually show up in your day.',
     categories: [{ key: 'usage', label: 'Power usage' }, { key: 'budget', label: 'Budget' }, { key: 'reliability', label: 'Reliability need' }],
     questions: [
@@ -1357,6 +1380,7 @@ window.SIEVE_TEMPLATES = {
   },
   'commercial-power-audit': {
     title: 'Commercial Power Audit',
+    coverImage: '/covers/commercial-power-audit.svg',
     intro: 'A few honest questions about what downtime is actually costing your operation.',
     categories: [{ key: 'scale', label: 'Facility scale' }, { key: 'urgency', label: 'Downtime urgency' }, { key: 'exposure', label: 'Financial exposure' }],
     questions: [
@@ -1428,6 +1452,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Relocation & Study Abroad ----------
   'visa-eligibility-pre-check': {
     title: 'Visa Eligibility Pre-Check',
+    coverImage: '/covers/visa-eligibility-pre-check.svg',
     intro: 'A few honest questions about where this relocation journey actually stands for you.',
     categories: [{ key: 'documentation', label: 'Documentation' }, { key: 'finances', label: 'Financial readiness' }, { key: 'confidence', label: 'Application confidence' }],
     questions: [
@@ -1507,6 +1532,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-country-fits-your-japa-plan': {
     title: 'Which Country Fits Your Japa Plan?',
+    coverImage: '/covers/which-country-fits-your-japa-plan.svg',
     intro: 'A few honest questions about what’s actually driving this decision for you.',
     categories: [{ key: 'goals', label: 'Relocation clarity' }, { key: 'readiness', label: 'Readiness' }, { key: 'push', label: 'What’s pushing you' }],
     questions: [
@@ -1566,6 +1592,7 @@ window.SIEVE_TEMPLATES = {
   },
   'study-abroad-readiness-score': {
     title: 'Study Abroad Readiness Score',
+    coverImage: '/covers/study-abroad-readiness-score.svg',
     intro: 'A few honest questions about where you actually are in this journey.',
     categories: [{ key: 'academics', label: 'Academic profile' }, { key: 'budget', label: 'Budget readiness' }, { key: 'anxiety', label: 'Application anxiety' }],
     questions: [
@@ -1632,6 +1659,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Automobile ----------
   'car-buyer-readiness-scorecard': {
     title: 'Car Buyer Readiness Scorecard',
+    coverImage: '/covers/car-buyer-readiness-scorecard.svg',
     intro: 'A few honest questions about what’s actually driving this purchase.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'timeline', label: 'Timeline' }, { key: 'frustration', label: 'Current vehicle frustration' }],
     questions: [
@@ -1691,6 +1719,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-car-fits-your-budget-and-lifestyle': {
     title: 'Which Car Fits Your Budget & Lifestyle?',
+    coverImage: '/covers/which-car-fits-your-budget-and-lifestyle.svg',
     intro: 'A few honest questions about what your daily life actually demands from a car.',
     categories: [{ key: 'usage', label: 'Usage needs' }, { key: 'budget', label: 'Budget fit' }, { key: 'reliability', label: 'Reliability need' }],
     questions: [
@@ -1745,6 +1774,7 @@ window.SIEVE_TEMPLATES = {
   },
   'auto-loan-pre-qualification': {
     title: 'Auto Loan Pre-Qualification',
+    coverImage: '/covers/auto-loan-pre-qualification.svg',
     intro: 'A few honest questions about where your finances actually stand.',
     categories: [{ key: 'income', label: 'Income stability' }, { key: 'downpayment', label: 'Down payment' }, { key: 'worry', label: 'Financial worry' }],
     questions: [
@@ -1801,6 +1831,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Weddings ----------
   'wedding-vendor-fit-quiz': {
     title: 'Wedding Vendor Fit Quiz',
+    coverImage: '/covers/wedding-vendor-fit-quiz.svg',
     intro: 'A few honest questions about what actually matters to you on the big day.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'style', label: 'Style fit' }, { key: 'stress', label: 'Planning stress' }],
     questions: [
@@ -1860,6 +1891,7 @@ window.SIEVE_TEMPLATES = {
   },
   'wedding-budget-and-readiness-planner': {
     title: 'Wedding Budget & Readiness Planner',
+    coverImage: '/covers/wedding-budget-and-readiness-planner.svg',
     intro: 'A few honest questions about how planning has actually been feeling so far.',
     categories: [{ key: 'budget', label: 'Budget clarity' }, { key: 'planning', label: 'Planning progress' }, { key: 'overwhelm', label: 'Planning overwhelm' }],
     questions: [
@@ -1934,6 +1966,7 @@ window.SIEVE_TEMPLATES = {
   },
   'venue-booking-qualifier': {
     title: 'Venue Booking Qualifier',
+    coverImage: '/covers/venue-booking-qualifier.svg',
     intro: 'A few honest questions about what’s actually made venue-hunting stressful.',
     categories: [{ key: 'capacity', label: 'Guest capacity' }, { key: 'budget', label: 'Budget fit' }, { key: 'frustration', label: 'Search frustration' }],
     questions: [
@@ -1990,6 +2023,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Beauty & Skincare ----------
   'skin-type-and-product-match-quiz': {
     title: 'Skin Type & Product Match Quiz',
+    coverImage: '/covers/skin-type-and-product-match-quiz.svg',
     intro: 'A few honest questions about how your skin actually makes you feel.',
     categories: [{ key: 'skintype', label: 'Skin profile' }, { key: 'concern', label: 'Primary concern' }, { key: 'confidence', label: 'Skin confidence' }],
     questions: [
@@ -2054,6 +2088,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-product-line-is-right-for-you': {
     title: 'Which Product Line Is Right For You?',
+    coverImage: '/covers/which-product-line-is-right-for-you.svg',
     intro: 'A few honest questions about what you actually want your skin or look to say about you.',
     categories: [{ key: 'goals', label: 'Beauty goals' }, { key: 'budget', label: 'Budget' }, { key: 'patience', label: 'Results patience' }],
     questions: [
@@ -2108,6 +2143,7 @@ window.SIEVE_TEMPLATES = {
   },
   'brand-campaign-insight-starter': {
     title: 'Brand Campaign Insight Starter',
+    coverImage: '/covers/brand-campaign-insight-starter.svg',
     intro: 'A few honest questions — answer for a chance to be featured in our next campaign.',
     categories: [{ key: 'affinity', label: 'Brand affinity' }, { key: 'usage', label: 'Product usage' }, { key: 'story', label: 'Personal story' }],
     questions: [
@@ -2159,6 +2195,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Security Services ----------
   'security-risk-assessment': {
     title: 'Security Risk Assessment',
+    coverImage: '/covers/security-risk-assessment.svg',
     intro: 'A few honest questions about what actually worries you about this property.',
     categories: [{ key: 'exposure', label: 'Risk exposure' }, { key: 'measures', label: 'Current measures' }, { key: 'fear', label: 'Safety anxiety' }],
     questions: [
@@ -2223,6 +2260,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-security-package-fits-your-property': {
     title: 'Which Security Package Fits Your Property?',
+    coverImage: '/covers/which-security-package-fits-your-property.svg',
     intro: 'A few honest questions about what’s actually driving the need for this.',
     categories: [{ key: 'scale', label: 'Property scale' }, { key: 'budget', label: 'Budget' }, { key: 'concern', label: 'Specific concern' }],
     questions: [
@@ -2272,6 +2310,7 @@ window.SIEVE_TEMPLATES = {
   },
   'corporate-security-needs-audit': {
     title: 'Corporate Security Needs Audit',
+    coverImage: '/covers/corporate-security-needs-audit.svg',
     intro: 'A few honest questions about what’s actually going wrong with security right now.',
     categories: [{ key: 'scale', label: 'Organisation scale' }, { key: 'satisfaction', label: 'Current provider fit' }, { key: 'incident', label: 'Recent incident pressure' }],
     questions: [
@@ -2333,6 +2372,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Logistics & Freight ----------
   'logistics-partner-fit-assessment': {
     title: 'Logistics Partner Fit Assessment',
+    coverImage: '/covers/logistics-partner-fit-assessment.svg',
     intro: 'A few honest questions about what’s actually going wrong with shipping right now.',
     categories: [{ key: 'volume', label: 'Shipment volume' }, { key: 'route', label: 'Route complexity' }, { key: 'reliability', label: 'Delivery reliability' }],
     questions: [
@@ -2392,6 +2432,7 @@ window.SIEVE_TEMPLATES = {
   },
   'fleet-and-freight-needs-audit': {
     title: 'Fleet & Freight Needs Audit',
+    coverImage: '/covers/fleet-and-freight-needs-audit.svg',
     intro: 'A few honest questions about what your current setup is actually costing you.',
     categories: [{ key: 'scale', label: 'Fleet scale' }, { key: 'urgency', label: 'Contract urgency' }, { key: 'strain', label: 'Operational strain' }],
     questions: [
@@ -2446,6 +2487,7 @@ window.SIEVE_TEMPLATES = {
   },
   'freight-volume-and-route-qualifier': {
     title: 'Freight Volume & Route Qualifier',
+    coverImage: '/covers/freight-volume-and-route-qualifier.svg',
     intro: 'A few honest questions about what’s actually driving this request.',
     categories: [{ key: 'volume', label: 'Volume' }, { key: 'corridor', label: 'Corridor fit' }, { key: 'trust', label: 'Provider trust' }],
     questions: [
@@ -2497,6 +2539,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Construction & Interior Design ----------
   'home-renovation-readiness-scorecard': {
     title: 'Home Renovation Readiness Scorecard',
+    coverImage: '/covers/home-renovation-readiness-scorecard.svg',
     intro: 'A few honest questions about what’s actually frustrating you about your home right now.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'scope', label: 'Project scope' }, { key: 'frustration', label: 'Home frustration' }],
     questions: [
@@ -2561,6 +2604,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-interior-design-package-fits-your-space': {
     title: 'Which Interior Design Package Fits Your Space?',
+    coverImage: '/covers/which-interior-design-package-fits-your-space.svg',
     intro: 'A few honest questions about how your space actually makes you feel.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'style', label: 'Style' }, { key: 'satisfaction', label: 'Space satisfaction' }],
     questions: [
@@ -2615,6 +2659,7 @@ window.SIEVE_TEMPLATES = {
   },
   'construction-project-budget-qualifier': {
     title: 'Construction Project Budget Qualifier',
+    coverImage: '/covers/construction-project-budget-qualifier.svg',
     intro: 'A few honest questions about what’s actually driving this build.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'scope', label: 'Project scope' }, { key: 'concern', label: 'Build concern' }],
     questions: [
@@ -2676,6 +2721,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Legal Services ----------
   'do-you-need-a-lawyer-legal-issue-triage': {
     title: 'Do You Need a Lawyer? Legal Issue Triage',
+    coverImage: '/covers/do-you-need-a-lawyer-legal-issue-triage.svg',
     intro: 'A few honest questions about what’s actually weighing on you right now.',
     categories: [{ key: 'severity', label: 'Issue severity' }, { key: 'urgency', label: 'Urgency' }, { key: 'worry', label: 'Personal worry' }],
     questions: [
@@ -2730,6 +2776,7 @@ window.SIEVE_TEMPLATES = {
   },
   'business-legal-health-check': {
     title: 'Business Legal Health Check',
+    coverImage: '/covers/business-legal-health-check.svg',
     intro: 'An honest audit of what would actually happen if your business were legally challenged tomorrow.',
     categories: [{ key: 'compliance', label: 'Compliance' }, { key: 'contracts', label: 'Contracts' }, { key: 'exposure', label: 'Legal exposure' }],
     questions: [
@@ -2804,6 +2851,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-legal-service-do-you-need': {
     title: 'Which Legal Service Do You Need?',
+    coverImage: '/covers/which-legal-service-do-you-need.svg',
     intro: 'A few honest questions to get you to the right person, fast.',
     categories: [{ key: 'area', label: 'Practice area fit' }, { key: 'urgency', label: 'Urgency' }, { key: 'weight', label: 'Emotional weight' }],
     questions: [
@@ -2855,6 +2903,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- AgriTech ----------
   'farm-financing-readiness-assessment': {
     title: 'Farm Financing Readiness Assessment',
+    coverImage: '/covers/farm-financing-readiness-assessment.svg',
     intro: 'A few honest questions about what’s actually holding your farm back from growing.',
     categories: [{ key: 'scale', label: 'Farm scale' }, { key: 'readiness', label: 'Financing readiness' }, { key: 'strain', label: 'Season-to-season strain' }],
     questions: [
@@ -2909,6 +2958,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-agritech-solution-fits-your-farm': {
     title: 'Which AgriTech Solution Fits Your Farm?',
+    coverImage: '/covers/which-agritech-solution-fits-your-farm.svg',
     intro: 'A few honest questions about what actually frustrates you about farming right now.',
     categories: [{ key: 'need', label: 'Primary need' }, { key: 'scale', label: 'Farm scale' }, { key: 'frustration', label: 'Operational frustration' }],
     questions: [
@@ -2958,6 +3008,7 @@ window.SIEVE_TEMPLATES = {
   },
   'post-harvest-loss-risk-check': {
     title: 'Post-Harvest Loss Risk Check',
+    coverImage: '/covers/post-harvest-loss-risk-check.svg',
     intro: 'A few honest questions about what it actually feels like to watch a harvest go to waste.',
     categories: [{ key: 'storage', label: 'Storage capacity' }, { key: 'logistics', label: 'Logistics gap' }, { key: 'heartbreak', label: 'Loss frustration' }],
     questions: [
@@ -3014,6 +3065,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Food Service & Catering ----------
   'event-catering-budget-and-menu-match': {
     title: 'Event Catering Budget & Menu Match',
+    coverImage: '/covers/event-catering-budget-and-menu-match.svg',
     intro: 'A few honest questions about what would actually make or break this event for you.',
     categories: [{ key: 'budget', label: 'Budget' }, { key: 'scale', label: 'Event scale' }, { key: 'anxiety', label: 'Event-day anxiety' }],
     questions: [
@@ -3068,6 +3120,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-catering-package-fits-your-event': {
     title: 'Which Catering Package Fits Your Event?',
+    coverImage: '/covers/which-catering-package-fits-your-event.svg',
     intro: 'A few honest questions about what actually matters to you about this event.',
     categories: [{ key: 'style', label: 'Service style' }, { key: 'budget', label: 'Budget' }, { key: 'impression', label: 'Impression it leaves' }],
     questions: [
@@ -3117,6 +3170,7 @@ window.SIEVE_TEMPLATES = {
   },
   'corporate-catering-needs-qualifier': {
     title: 'Corporate Catering Needs Qualifier',
+    coverImage: '/covers/corporate-catering-needs-qualifier.svg',
     intro: 'A few honest questions about what’s actually not working with catering right now.',
     categories: [{ key: 'frequency', label: 'Order frequency' }, { key: 'scale', label: 'Order scale' }, { key: 'dissatisfaction', label: 'Provider dissatisfaction' }],
     questions: [
@@ -3168,6 +3222,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Diaspora Finance ----------
   'diaspora-property-investment-readiness-score': {
     title: 'Diaspora Property Investment Readiness Score',
+    coverImage: '/covers/diaspora-property-investment-readiness-score.svg',
     intro: 'A few honest questions about what actually worries you about investing back home.',
     categories: [{ key: 'budget', label: 'Investment budget' }, { key: 'readiness', label: 'Readiness' }, { key: 'trust', label: 'Trust concern' }],
     questions: [
@@ -3227,6 +3282,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-remittance-or-investment-service-fits-you': {
     title: 'Which Remittance or Investment Service Fits You?',
+    coverImage: '/covers/which-remittance-or-investment-service-fits-you.svg',
     intro: 'A few honest questions about what sending money home actually feels like for you.',
     categories: [{ key: 'frequency', label: 'Transfer frequency' }, { key: 'goal', label: 'Financial goal' }, { key: 'frustration', label: 'Transfer frustration' }],
     questions: [
@@ -3276,6 +3332,7 @@ window.SIEVE_TEMPLATES = {
   },
   'diaspora-retirement-planning-check': {
     title: 'Diaspora Retirement Planning Check',
+    coverImage: '/covers/diaspora-retirement-planning-check.svg',
     intro: 'A few honest questions about what retirement back home actually looks like in your mind.',
     categories: [{ key: 'timeline', label: 'Retirement timeline' }, { key: 'planning', label: 'Planning progress' }, { key: 'anxiety', label: 'Retirement anxiety' }],
     questions: [
@@ -3337,6 +3394,7 @@ window.SIEVE_TEMPLATES = {
   // ---------- Marketing & Advertising ----------
   'marketing-budget-and-fit-assessment': {
     title: 'Marketing Budget & Fit Assessment',
+    coverImage: '/covers/marketing-budget-and-fit-assessment.svg',
     intro: 'A few honest questions about what’s actually frustrating about growth right now.',
     categories: [{ key: 'budget', label: 'Marketing budget' }, { key: 'readiness', label: 'Readiness' }, { key: 'frustration', label: 'Growth frustration' }],
     questions: [
@@ -3391,6 +3449,7 @@ window.SIEVE_TEMPLATES = {
   },
   'which-marketing-package-fits-your-business': {
     title: 'Which Marketing Package Fits Your Business?',
+    coverImage: '/covers/which-marketing-package-fits-your-business.svg',
     intro: 'A few honest questions about what’s actually missing from your marketing right now.',
     categories: [{ key: 'goal', label: 'Primary goal' }, { key: 'budget', label: 'Budget' }, { key: 'overwhelm', label: 'Marketing overwhelm' }],
     questions: [
@@ -3440,6 +3499,7 @@ window.SIEVE_TEMPLATES = {
   },
   'ad-spend-readiness-audit': {
     title: 'Ad Spend Readiness Audit',
+    coverImage: '/covers/ad-spend-readiness-audit.svg',
     intro: 'A few honest questions about what’s actually happened with ad spend so far.',
     categories: [{ key: 'budget', label: 'Ad budget' }, { key: 'foundation', label: 'Marketing foundation' }, { key: 'burned', label: 'Past ad spend pain' }],
     questions: [
