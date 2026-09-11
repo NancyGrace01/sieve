@@ -23,8 +23,8 @@
       <li><a href="pricing.html">Pricing</a></li>
     </ul>
     <div class="nav-cta">
-      <a href="login.html" class="btn btn-ghost btn-sm">Login</a>
-      <a href="signup.html" class="btn btn-primary btn-sm">Get started free</a>
+      <a href="login.html" id="nav-login" class="btn btn-ghost btn-sm">Login</a>
+      <a href="signup.html" id="nav-cta" class="btn btn-primary btn-sm">Get started free</a>
     </div>
     <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
   </nav>
@@ -277,7 +277,7 @@
       <div class="cta-banner">
         <h2>Start generating and qualifying leads</h2>
         <p>Create your first scorecard, capture every lead who takes it, and know instantly who's a fit, who's ready, and how to personalise every next step.</p>
-        <div class="hero-ctas"><a href="signup.html" class="btn btn-accent">Get started for free</a></div>
+        <div class="hero-ctas"><a href="signup.html" id="hero-cta" class="btn btn-accent">Get started for free</a></div>
         <div class="cta-check-row">
           <span>✓ No card required</span>
           <span>✓ Free plan available</span>
@@ -324,5 +324,26 @@
 </footer>
 
 <script src="script.js"></script>
+<script>
+  fetch('/api/auth/me', { credentials: 'include' })
+    .then(res => {
+      if (!res.ok) return; // not logged in — leave everything as-is
+
+      const loginLink = document.getElementById('nav-login');
+      if (loginLink) {
+        loginLink.textContent = 'Dashboard';
+        loginLink.href = '/dashboard.html';
+      }
+
+      ['nav-cta', 'hero-cta'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.textContent = 'Go to dashboard';
+          btn.href = '/dashboard.html';
+        }
+      });
+    })
+    .catch(() => {}); 
+</script>
 </body>
 </html>
