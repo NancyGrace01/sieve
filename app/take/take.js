@@ -279,7 +279,7 @@
         </p>
         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
           <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
-          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">📱 Send this to WhatsApp</a>
+          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
         </div>
       </div>
     `;
