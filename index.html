@@ -327,7 +327,7 @@
 <script>
   fetch('/api/auth/me', { credentials: 'include' })
     .then(res => {
-      if (!res.ok) return; // not logged in — leave everything as-is
+      if (!res.ok) return; 
 
       const loginLink = document.getElementById('nav-login');
       if (loginLink) {
@@ -335,15 +335,16 @@
         loginLink.href = '/dashboard.html';
       }
 
-      ['nav-cta', 'hero-cta'].forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) {
-          btn.textContent = 'Go to dashboard';
-          btn.href = '/dashboard.html';
-        }
-      });
+      const navCta = document.getElementById('nav-cta');
+      if (navCta) navCta.style.display = 'none'; 
+
+      const heroCta = document.getElementById('hero-cta');
+      if (heroCta) {
+        heroCta.textContent = 'Go to dashboard';
+        heroCta.href = '/dashboard.html';
+      }
     })
-    .catch(() => {}); 
+    .catch(() => {});
 </script>
 </body>
 </html>
