@@ -50,13 +50,12 @@
       content.innerHTML = `
         <div class="leads-table-wrap">
           <table class="leads">
-            <thead><tr><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Score</th><th>Tier</th><th>Date</th></tr></thead>
+            <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Score</th><th>Tier</th><th>Date</th></tr></thead>
             <tbody>
               ${leads.map(l => `
                 <tr>
                   <td>${escapeHtml([l.firstName, l.lastName].filter(Boolean).join(' ') || '—')}</td>
-                  <td>${escapeHtml(l.businessName || '—')}</td>
-                  <td>${escapeHtml((l.profile && l.profile.phone) || '—')}</td>
+                  <td>${escapeHtml(l.phone || '—')}</td>
                   <td>${escapeHtml(l.email || '—')}</td>
                   <td><strong>${l.overallScore}%</strong></td>
                   <td><span class="tier-pill">${escapeHtml(l.tier)}</span></td>

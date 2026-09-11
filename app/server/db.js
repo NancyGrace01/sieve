@@ -107,6 +107,7 @@ async function migrate() {
       first_name TEXT,
       last_name TEXT,
       business_name TEXT,
+      phone TEXT,
       email TEXT,
       answers TEXT NOT NULL,
       category_scores TEXT NOT NULL,
@@ -201,6 +202,13 @@ async function migrate() {
     if (!userColumns.has(name)) {
       await pool.query(`ALTER TABLE users ADD COLUMN ${name} ${def}`);
     }
+  }
+  const { rows: existingLeadCols } = await pool.query(`
+    SELECT column_name FROM information_schema.columns WHERE table_name = 'leads'
+  `);
+  const leadColumns = new Set(existingLeadCols.map((c) => c.column_name));
+  if (!leadColumns.has('phone')) {
+    await pool.query(`ALTER TABLE leads ADD COLUMN phone TEXT`);
   }
 }
 

@@ -49,7 +49,6 @@
     if (pc.captureGender) rows.push(selectField('p-gender', 'Gender', pc.genders));
     if (pc.captureLocation) rows.push(selectField('p-location', 'Location', pc.locations));
     if (pc.captureSocialClass) rows.push(selectField('p-social', 'Income bracket', pc.socialClasses));
-    if (pc.capturePhone) rows.push('<input type="tel" id="p-phone" placeholder="Phone number" required />');
     if (pc.interestOptions && pc.interestOptions.length) {
       rows.push(selectField('p-interest', pc.interestQuestion || 'Which best describes your interest?', pc.interestOptions));
     }
@@ -76,7 +75,7 @@
             <input type="text" id="g-first" placeholder="First name" />
             <input type="text" id="g-last" placeholder="Last name" />
           </div>
-          <input type="text" id="g-business" placeholder="Business name" />
+          <input type="tel" id="g-phone" placeholder="Phone number" />
           <input type="email" id="g-email" placeholder="Email" />
           ${profileFieldsHtml()}
           <button class="btn btn-accent btn-block" id="g-start">Start →</button>
@@ -88,10 +87,20 @@
       const errorEl = document.getElementById('g-error');
       errorEl.style.display = 'none';
 
+      // Name, phone, and email are the whole point of the gate — mandatory on
+      // every scorecard, not conditional on anything.
+      const coreMissing = ['g-first', 'g-last', 'g-phone', 'g-email']
+        .some(id => !document.getElementById(id).value.trim());
+      if (coreMissing) {
+        errorEl.textContent = 'Please fill in your name, phone number, and email before starting.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
       if (pc.enabled) {
         const requiredIds = [
           pc.captureAge && 'p-age', pc.captureGender && 'p-gender',
-          pc.captureLocation && 'p-location', pc.captureSocialClass && 'p-social', pc.capturePhone && 'p-phone',
+          pc.captureLocation && 'p-location', pc.captureSocialClass && 'p-social',
           (pc.interestOptions && pc.interestOptions.length) && 'p-interest',
         ].filter(Boolean);
         const missing = requiredIds.some(id => !document.getElementById(id).value);
@@ -105,7 +114,6 @@
           ...(pc.captureGender ? { gender: document.getElementById('p-gender').value } : {}),
           ...(pc.captureLocation ? { location: document.getElementById('p-location').value } : {}),
           ...(pc.captureSocialClass ? { socialClass: document.getElementById('p-social').value } : {}),
-          ...(pc.capturePhone ? { phone: document.getElementById('p-phone').value.trim() } : {}),
           ...((pc.interestOptions && pc.interestOptions.length) ? { interest: document.getElementById('p-interest').value } : {}),
         };
       }
@@ -113,7 +121,7 @@
       lead = {
         firstName: document.getElementById('g-first').value.trim(),
         lastName: document.getElementById('g-last').value.trim(),
-        businessName: document.getElementById('g-business').value.trim(),
+        phone: document.getElementById('g-phone').value.trim(),
         email: document.getElementById('g-email').value.trim(),
       };
       startTime = Date.now();
@@ -245,6 +253,12 @@
       </div>
     ` : '';
 
+    const shareLink = `${location.origin}/take/index.html?slug=${slug}`;
+    const shareText = buildShareText(result.shareTemplate, {
+      score: p.overall, title: scorecard.title, brand: brandName, tier: p.tierLabel, link: shareLink,
+    });
+    const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
     root.innerHTML = `
       <div class="demo-body demo-result">
         <p class="result-greeting">Hi ${escapeHtml(p.greetingName)}, here's your result</p>
@@ -263,8 +277,9 @@
         <p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">
           ${lead.email ? `Your full personalised report has also been emailed to ${escapeHtml(lead.email)}.` : 'Thanks — your results have been recorded.'}
         </p>
-        <div style="margin-top:14px;">
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
           <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
+          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">📱 Send this to WhatsApp</a>
         </div>
       </div>
     `;

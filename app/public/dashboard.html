@@ -95,14 +95,32 @@
               <a class="btn btn-ghost btn-sm" href="/leads.html?id=${sc.id}">Leads (${sc.leadCount})</a>
               ${sc.published ? `<a class="btn btn-ghost btn-sm" href="/report.html?id=${sc.id}">Report</a>` : ''}
               ${sc.published ? `<a class="btn btn-ghost btn-sm" href="/take/index.html?slug=${sc.slug}" target="_blank">View live</a>` : ''}
+              <button class="btn btn-ghost btn-sm" data-delete="${sc.id}" data-title="${escapeHtml(sc.title)}">Delete</button> 
             </div>
           </div>
         `).join('')}</div>`;
+
+        content.querySelectorAll('[data-delete]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const title = btn.dataset.title;
+            if (!confirm(`Delete "${title}"? This also permanently deletes all its leads. This can't be undone.`)) return;
+            try {
+              await api(`/scorecards/${btn.dataset.delete}`, { method: 'DELETE' });
+              load();
+            } catch (err) {
+              alert(err.message || 'Could not delete this scorecard.');
+            }
+          });
+        });
       }
 
       async function createScorecard() {
-        const { scorecard } = await api('/scorecards', { method: 'POST', body: { title: 'Untitled scorecard' } });
-        window.location.href = `/builder.html?id=${scorecard.id}`;
+        try {
+          const { scorecard } = await api('/scorecards', { method: 'POST', body: { title: 'Untitled scorecard' } });
+          window.location.href = `/builder.html?id=${scorecard.id}`;
+        } catch (err) {
+          alert(err.message || 'Could not create a new scorecard.');
+        }
       }
 
       document.getElementById('new-btn').addEventListener('click', createScorecard);

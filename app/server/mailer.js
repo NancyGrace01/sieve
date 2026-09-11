@@ -96,8 +96,8 @@ function newLeadEmail(ownerEmail, scorecardTitle, lead) {
     subject: `New lead on "${scorecardTitle}" — ${lead.overall}% (${lead.tier})`,
     html: `<p><strong>${escapeHtml(name)}</strong> just completed <strong>${escapeHtml(scorecardTitle)}</strong>.</p>
            <p>Score: <strong>${lead.overall}%</strong> — ${escapeHtml(lead.tier)}</p>
-           ${lead.email ? `<p>Email: ${escapeHtml(lead.email)}</p>` : ''}
-           ${lead.businessName ? `<p>Business: ${escapeHtml(lead.businessName)}</p>` : ''}`,
+           ${lead.phone ? `<p>Phone: ${escapeHtml(lead.phone)}</p>` : ''}
+           ${lead.email ? `<p>Email: ${escapeHtml(lead.email)}</p>` : ''}`,
   });
 }
 

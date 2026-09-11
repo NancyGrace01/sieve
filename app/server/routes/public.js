@@ -29,12 +29,23 @@ async function resolveBrandName(scorecardRow) {
 // the whole point of a flat monthly fee). Credits mode blocks once the
 // balance has run out; CPL mode blocks if no card is on file to charge.
 // Returns null when the scorecard is available, or a user-facing reason.
+const FREE_PLAN_RESPONSE_LIMIT = 10;
+
 async function billingGate(scorecardRow) {
   const owner = await get(
-    'SELECT billing_mode, credit_balance, paystack_authorization_code FROM users WHERE id = ?',
+    'SELECT plan, billing_mode, credit_balance, paystack_authorization_code FROM users WHERE id = ?',
     [scorecardRow.user_id]
   );
-  if (!owner || owner.billing_mode === 'subscription') return null;
+  if (!owner) return null;
+
+  if (owner.plan === 'free') {
+    const { count } = await get('SELECT COUNT(*) as count FROM leads WHERE scorecard_id = ?', [scorecardRow.id]);
+    if (Number(count) >= FREE_PLAN_RESPONSE_LIMIT) {
+      return `This scorecard has reached its free-plan limit of ${FREE_PLAN_RESPONSE_LIMIT} responses — the owner needs to upgrade to keep collecting leads.`;
+    }
+  }
+
+  if (owner.billing_mode === 'subscription') return null;
   if (owner.billing_mode === 'credits' && owner.credit_balance <= 0) {
     return 'This scorecard is temporarily unavailable — the owner is out of response credits.';
   }
@@ -56,7 +67,6 @@ function publicProfileCapture(row) {
     captureGender: pc.captureGender, genders: pc.captureGender ? GENDERS : [],
     captureLocation: pc.captureLocation, locations: pc.captureLocation ? LOCATIONS : [],
     captureSocialClass: pc.captureSocialClass, socialClasses: pc.captureSocialClass ? SOCIAL_CLASSES : [],
-    capturePhone: pc.capturePhone,
     interestQuestion: pc.interestQuestion || '',
     interestOptions: pc.interestOptions || [],
   };
@@ -85,11 +95,6 @@ function validateProfile(pc, profile) {
   if (pc.captureSocialClass) {
     if (!SOCIAL_CLASSES.includes(p.socialClass)) return { ok: false, error: 'Please select an income bracket.' };
     clean.socialClass = p.socialClass;
-  }
-  if (pc.capturePhone) {
-    const phone = String(p.phone || '').trim();
-    if (phone.length < 7 || phone.length > 20) return { ok: false, error: 'Please enter a valid phone number.' };
-    clean.phone = phone;
   }
   if (pc.interestOptions && pc.interestOptions.length) {
     if (!pc.interestOptions.includes(p.interest)) return { ok: false, error: 'Please select an interest.' };
@@ -147,11 +152,14 @@ router.post('/scorecards/:slug/submit', submitLimiter, async (req, res, next) =>
     const row = await get('SELECT * FROM scorecards WHERE slug = ? AND published = 1', [req.params.slug]);
     if (!row) return res.status(404).json({ error: 'This scorecard is not available.' });
 
-    const { firstName, lastName, businessName, email, answers, profile, timeToCompleteSeconds } = req.body || {};
+    const { firstName, lastName, phone, email, answers, profile, timeToCompleteSeconds } = req.body || {};
     const questions = JSON.parse(row.questions);
 
     if (!Array.isArray(answers) || answers.length !== questions.length) {
       return res.status(400).json({ error: 'Answers do not match this scorecard.' });
+    }
+    if (!firstName?.trim() || !lastName?.trim() || !phone?.trim() || !email?.trim()) {
+      return res.status(400).json({ error: 'Name, phone number, and email are required.' });
     }
     for (let i = 0; i < questions.length; i += 1) {
       const idx = answers[i];
@@ -169,15 +177,15 @@ router.post('/scorecards/:slug/submit', submitLimiter, async (req, res, next) =>
       : null;
 
     const { categoryScores, overall, tier } = computeScore(row, answers);
-    const lead = { firstName, lastName, businessName, email };
+    const lead = { firstName, lastName, phone, email };
     const id = crypto.randomUUID();
     const personalization = buildPersonalizedResult({ scorecard: row, lead, answers, categoryScores, overall, tierLabel: tier, leadId: id });
     const brandName = await resolveBrandName(row);
 
     await run(
-      `INSERT INTO leads (id, scorecard_id, first_name, last_name, business_name, email, answers, category_scores, overall_score, tier, personalization, profile, time_to_complete_seconds)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, row.id, firstName || null, lastName || null, businessName || null, email || null,
+      `INSERT INTO leads (id, scorecard_id, first_name, last_name, phone, email, answers, category_scores, overall_score, tier, personalization, profile, time_to_complete_seconds)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, row.id, firstName || null, lastName || null, phone || null, email || null,
         JSON.stringify(answers), JSON.stringify(categoryScores), overall, tier, JSON.stringify(personalization),
         profileCheck.clean ? JSON.stringify(profileCheck.clean) : null, timeSeconds]
     );
@@ -213,7 +221,7 @@ router.post('/scorecards/:slug/submit', submitLimiter, async (req, res, next) =>
           .catch(err => console.error('[public] lead results email failed:', err));
       }
       if (owner) {
-        newLeadEmail(owner.email, row.title, { firstName, lastName, businessName, email, overall, tier })
+        newLeadEmail(owner.email, row.title, { firstName, lastName, phone, email, overall, tier })
           .catch(err => console.error('[public] new-lead email failed:', err));
       }
     })();

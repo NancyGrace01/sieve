@@ -68,6 +68,12 @@ router.get('/meta/demographics', (req, res) => {
 // Create a new, empty scorecard.
 router.post('/', async (req, res, next) => {
   try {
+    if (req.user.plan === 'free') {
+      const { count } = await get('SELECT COUNT(*) as count FROM scorecards WHERE user_id = ?', [req.user.id]);
+      if (Number(count) >= 1) {
+        return res.status(402).json({ error: 'Your free plan allows 1 scorecard. Upgrade to create more.' });
+      }
+    }
     const title = (req.body && req.body.title) || 'Untitled scorecard';
     const id = crypto.randomUUID();
     const slug = await uniqueSlug(slugify(title));
@@ -181,7 +187,7 @@ router.get('/:id/leads', async (req, res, next) => {
         id: l.id,
         firstName: l.first_name,
         lastName: l.last_name,
-        businessName: l.business_name,
+        phone: l.phone,
         email: l.email,
         categoryScores: JSON.parse(l.category_scores),
         overallScore: l.overall_score,
@@ -308,12 +314,12 @@ router.get('/:id/leads.csv', async (req, res, next) => {
     const row = await ownedScorecardOr404(req, res);
     if (!row) return;
     const leads = await all('SELECT * FROM leads WHERE scorecard_id = ? ORDER BY created_at DESC', [row.id]);
-    const header = 'First name,Last name,Business,Email,Phone,Overall score,Tier,Age range,Gender,Location,Social class,Interest,Time to complete (s),Date\n';
+    const header = 'First name,Last name,Phone,Email,Overall score,Tier,Age range,Gender,Location,Social class,Interest,Time to complete (s),Date\n';
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = leads.map(l => {
       const p = l.profile ? JSON.parse(l.profile) : {};
       return [
-        l.first_name, l.last_name, l.business_name, l.email, p.phone, l.overall_score, l.tier,
+        l.first_name, l.last_name, l.phone, l.email, l.overall_score, l.tier,
         p.ageRange, p.gender, p.location, p.socialClass, p.interest,
         l.time_to_complete_seconds, l.created_at,
       ].map(esc).join(',');
