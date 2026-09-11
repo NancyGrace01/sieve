@@ -249,7 +249,7 @@
     const engagementBlock = result.engagementMode ? `
       <div class="result-engagement">
         ${result.timeToCompleteSeconds != null ? `<span class="result-time-badge">⏱ Completed in ${formatDuration(result.timeToCompleteSeconds)}</span>` : ''}
-        <button class="btn btn-ghost btn-sm" id="share-btn" type="button">📤 Share your result</button>
+        <button class="btn btn-ghost btn-sm" id="share-btn" type="button">Share your result</button>
       </div>
     ` : '';
 
