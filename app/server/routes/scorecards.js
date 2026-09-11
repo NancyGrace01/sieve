@@ -308,12 +308,12 @@ router.get('/:id/leads.csv', async (req, res, next) => {
     const row = await ownedScorecardOr404(req, res);
     if (!row) return;
     const leads = await all('SELECT * FROM leads WHERE scorecard_id = ? ORDER BY created_at DESC', [row.id]);
-    const header = 'First name,Last name,Business,Email,Overall score,Tier,Age range,Gender,Location,Social class,Interest,Time to complete (s),Date\n';
+    const header = 'First name,Last name,Business,Email,Phone,Overall score,Tier,Age range,Gender,Location,Social class,Interest,Time to complete (s),Date\n';
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const lines = leads.map(l => {
       const p = l.profile ? JSON.parse(l.profile) : {};
       return [
-        l.first_name, l.last_name, l.business_name, l.email, l.overall_score, l.tier,
+        l.first_name, l.last_name, l.business_name, l.email, p.phone, l.overall_score, l.tier,
         p.ageRange, p.gender, p.location, p.socialClass, p.interest,
         l.time_to_complete_seconds, l.created_at,
       ].map(esc).join(',');

@@ -63,6 +63,7 @@
             <label class="toggle-row"><input type="checkbox" id="pc-gender" /> Gender</label>
             <label class="toggle-row"><input type="checkbox" id="pc-location" /> Location (Nigerian state)</label>
             <label class="toggle-row"><input type="checkbox" id="pc-social" /> Income bracket (social class)</label>
+            <label class="toggle-row"><input type="checkbox" id="pc-phone" /> Phone number</label>
             <div class="field" style="margin-top:12px;"><label>Interest question — psychographic: what they actually care about regarding the brand/product (optional)</label>
               <input type="text" id="pc-interest-q" placeholder="e.g. Which best describes your interest in [Brand]?" /></div>
             <div class="field"><label>Interest options, comma-separated (leave blank to skip this question)</label>
@@ -138,7 +139,7 @@
 
     let state = {
       title: '', intro: '', categories: [], questions: [], tiers: [], slug: '', published: false,
-      profileCapture: { enabled: false, captureAge: false, captureGender: false, captureLocation: false, captureSocialClass: false, interestQuestion: '', interestOptions: [] },
+      profileCapture: { enabled: false, captureAge: false, captureGender: false, captureLocation: false, captureSocialClass: false, capturePhone: false, interestQuestion: '', interestOptions: [] },
       engagementMode: false, shareTemplate: '',
     };
 
@@ -167,6 +168,7 @@
       document.getElementById('pc-gender').checked = !!pc.captureGender;
       document.getElementById('pc-location').checked = !!pc.captureLocation;
       document.getElementById('pc-social').checked = !!pc.captureSocialClass;
+      document.getElementById('pc-phone').checked = !!pc.capturePhone;
       document.getElementById('pc-interest-q').value = pc.interestQuestion || '';
       document.getElementById('pc-interest-opts').value = (pc.interestOptions || []).join(', ');
       document.getElementById('pc-fields').style.display = pc.enabled ? 'block' : 'none';
@@ -399,6 +401,7 @@
       document.getElementById('pc-gender').addEventListener('change', (e) => { state.profileCapture.captureGender = e.target.checked; });
       document.getElementById('pc-location').addEventListener('change', (e) => { state.profileCapture.captureLocation = e.target.checked; });
       document.getElementById('pc-social').addEventListener('change', (e) => { state.profileCapture.captureSocialClass = e.target.checked; });
+      document.getElementById('pc-phone').addEventListener('change', (e) => { state.profileCapture.capturePhone = e.target.checked; });
       document.getElementById('pc-interest-q').addEventListener('input', (e) => { state.profileCapture.interestQuestion = e.target.value; });
       document.getElementById('pc-interest-opts').addEventListener('input', (e) => {
         state.profileCapture.interestOptions = e.target.value.split(',').map(s => s.trim()).filter(Boolean);

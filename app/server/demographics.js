@@ -30,6 +30,7 @@ function sanitizeProfileCapture(input) {
     captureGender: !!pc.captureGender,
     captureLocation: !!pc.captureLocation,
     captureSocialClass: !!pc.captureSocialClass,
+    capturePhone: !!pc.capturePhone,
     interestQuestion: String(pc.interestQuestion || '').trim().slice(0, 200),
     interestOptions: Array.isArray(pc.interestOptions)
       ? pc.interestOptions.map(o => String(o).trim()).filter(Boolean).slice(0, 12)

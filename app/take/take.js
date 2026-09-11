@@ -49,6 +49,7 @@
     if (pc.captureGender) rows.push(selectField('p-gender', 'Gender', pc.genders));
     if (pc.captureLocation) rows.push(selectField('p-location', 'Location', pc.locations));
     if (pc.captureSocialClass) rows.push(selectField('p-social', 'Income bracket', pc.socialClasses));
+    if (pc.capturePhone) rows.push('<input type="tel" id="p-phone" placeholder="Phone number" required />');
     if (pc.interestOptions && pc.interestOptions.length) {
       rows.push(selectField('p-interest', pc.interestQuestion || 'Which best describes your interest?', pc.interestOptions));
     }
@@ -90,7 +91,7 @@
       if (pc.enabled) {
         const requiredIds = [
           pc.captureAge && 'p-age', pc.captureGender && 'p-gender',
-          pc.captureLocation && 'p-location', pc.captureSocialClass && 'p-social',
+          pc.captureLocation && 'p-location', pc.captureSocialClass && 'p-social', pc.capturePhone && 'p-phone',
           (pc.interestOptions && pc.interestOptions.length) && 'p-interest',
         ].filter(Boolean);
         const missing = requiredIds.some(id => !document.getElementById(id).value);
@@ -104,6 +105,7 @@
           ...(pc.captureGender ? { gender: document.getElementById('p-gender').value } : {}),
           ...(pc.captureLocation ? { location: document.getElementById('p-location').value } : {}),
           ...(pc.captureSocialClass ? { socialClass: document.getElementById('p-social').value } : {}),
+          ...(pc.capturePhone ? { phone: document.getElementById('p-phone').value.trim() } : {}),
           ...((pc.interestOptions && pc.interestOptions.length) ? { interest: document.getElementById('p-interest').value } : {}),
         };
       }

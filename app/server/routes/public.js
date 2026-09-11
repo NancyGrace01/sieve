@@ -56,6 +56,7 @@ function publicProfileCapture(row) {
     captureGender: pc.captureGender, genders: pc.captureGender ? GENDERS : [],
     captureLocation: pc.captureLocation, locations: pc.captureLocation ? LOCATIONS : [],
     captureSocialClass: pc.captureSocialClass, socialClasses: pc.captureSocialClass ? SOCIAL_CLASSES : [],
+    capturePhone: pc.capturePhone,
     interestQuestion: pc.interestQuestion || '',
     interestOptions: pc.interestOptions || [],
   };
@@ -84,6 +85,11 @@ function validateProfile(pc, profile) {
   if (pc.captureSocialClass) {
     if (!SOCIAL_CLASSES.includes(p.socialClass)) return { ok: false, error: 'Please select an income bracket.' };
     clean.socialClass = p.socialClass;
+  }
+  if (pc.capturePhone) {
+    const phone = String(p.phone || '').trim();
+    if (phone.length < 7 || phone.length > 20) return { ok: false, error: 'Please enter a valid phone number.' };
+    clean.phone = phone;
   }
   if (pc.interestOptions && pc.interestOptions.length) {
     if (!pc.interestOptions.includes(p.interest)) return { ok: false, error: 'Please select an interest.' };
