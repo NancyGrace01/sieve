@@ -56,6 +56,7 @@
                 <tr>
                   <td>${escapeHtml([l.firstName, l.lastName].filter(Boolean).join(' ') || '—')}</td>
                   <td>${escapeHtml(l.businessName || '—')}</td>
+                  <td>${escapeHtml((l.profile && l.profile.phone) || '—')}</td>
                   <td>${escapeHtml(l.email || '—')}</td>
                   <td><strong>${l.overallScore}%</strong></td>
                   <td><span class="tier-pill">${escapeHtml(l.tier)}</span></td>

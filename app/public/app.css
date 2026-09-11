@@ -1,5 +1,17 @@
 /* Sieve App — dashboard, builder, leads. Extends the marketing site's styles.css. */
 
+.dash-stats { margin-bottom: 28px; }
+.sc-card {
+  transition: box-shadow .15s ease, transform .15s ease;
+  border-left: 3px solid var(--line);
+}
+.sc-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.sc-card-live { border-left-color: var(--good); }
+.sc-card-draft { border-left-color: var(--line); }
+.sc-meta-faint { color: var(--ink-faint); font-size: 12px; }
+.empty-state svg { display: block; }
+.empty-state h3 { font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 6px; }
+
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn:disabled:hover { background: inherit; transform: none; box-shadow: none; }

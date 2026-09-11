@@ -26,6 +26,7 @@
         <h1>Your scorecards</h1>
         <button class="btn btn-accent" id="new-btn">+ New scorecard</button>
       </div>
+      <div id="stats"></div>
       <div id="content"><p style="color:var(--ink-faint);">Loading…</p></div>
     </main>
   </div>
@@ -36,20 +37,59 @@
       if (!user) return;
 
       const content = document.getElementById('content');
+      const statsEl = document.getElementById('stats');
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      function renderStats(scorecards) {
+        const total = scorecards.length;
+        const live = scorecards.filter(sc => sc.published).length;
+        const totalLeads = scorecards.reduce((sum, sc) => sum + sc.leadCount, 0);
+
+        statsEl.innerHTML = `
+          <div class="wallet-card dash-stats">
+            <div class="wallet-stats">
+              <div><span class="wallet-num">${total}</span><span class="wallet-label">Scorecard${total === 1 ? '' : 's'}</span></div>
+              <div><span class="wallet-num">${live}</span><span class="wallet-label">Live now</span></div>
+              <div><span class="wallet-num">${totalLeads}</span><span class="wallet-label">Total lead${totalLeads === 1 ? '' : 's'}</span></div>
+            </div>
+          </div>
+        `;
+      }
 
       async function load() {
         const { scorecards } = await api('/scorecards');
+
         if (!scorecards.length) {
-          content.innerHTML = `<div class="empty-state"><h3>No scorecards yet</h3><p>Create your first one to start qualifying leads.</p></div>`;
+          statsEl.innerHTML = '';
+          content.innerHTML = `
+            <div class="empty-state">
+              <svg width="56" height="56" viewBox="0 0 56 56" fill="none" style="margin:0 auto 18px;">
+                <rect x="6" y="6" width="44" height="44" rx="12" stroke="var(--accent)" stroke-width="2.5" opacity="0.35"/>
+                <path d="M18 28h20M18 20h20M18 36h12" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+              <h3>No scorecards yet</h3>
+              <p>Create your first one to start qualifying leads.</p>
+              <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;">
+                <button class="btn btn-accent btn-sm" id="empty-new-btn">+ New scorecard</button>
+                <a class="btn btn-ghost btn-sm" href="/templates.html">Browse templates</a>
+              </div>
+            </div>`;
+          document.getElementById('empty-new-btn').addEventListener('click', createScorecard);
           return;
         }
+
+        renderStats(scorecards);
         content.innerHTML = `<div class="sc-grid">${scorecards.map(sc => `
-          <div class="sc-card">
+          <div class="sc-card sc-card-${sc.published ? 'live' : 'draft'}">
             <div class="sc-card-top">
               <div class="sc-title">${escapeHtml(sc.title)}</div>
               <span class="badge ${sc.published ? 'live' : 'draft'}">${sc.published ? 'Live' : 'Draft'}</span>
             </div>
             <div class="sc-meta">${sc.questions.length} question${sc.questions.length === 1 ? '' : 's'} · ${sc.leadCount} lead${sc.leadCount === 1 ? '' : 's'}</div>
+            <div class="sc-meta sc-meta-faint">Updated ${new Date(sc.updatedAt).toLocaleDateString()}</div>
             <div class="sc-card-actions">
               <a class="btn btn-ghost btn-sm" href="/builder.html?id=${sc.id}">Edit</a>
               <a class="btn btn-ghost btn-sm" href="/leads.html?id=${sc.id}">Leads (${sc.leadCount})</a>
@@ -60,14 +100,12 @@
         `).join('')}</div>`;
       }
 
-      function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-      }
-
-      document.getElementById('new-btn').addEventListener('click', async () => {
+      async function createScorecard() {
         const { scorecard } = await api('/scorecards', { method: 'POST', body: { title: 'Untitled scorecard' } });
         window.location.href = `/builder.html?id=${scorecard.id}`;
-      });
+      }
+
+      document.getElementById('new-btn').addEventListener('click', createScorecard);
 
       load();
     })();
