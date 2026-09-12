@@ -44,8 +44,13 @@
     const params = new URLSearchParams(location.search);
     const templateSlug = params.get('template');
     const chosenTemplate = templateSlug && window.SIEVE_TEMPLATES ? window.SIEVE_TEMPLATES[templateSlug] : null;
+    // Set by pricing.html's checkout CTAs — a visitor who picked a bundle/plan
+    // before signing up should land straight on that checkout, not the dashboard.
+    const nextStep = params.get('next');
     if (chosenTemplate) {
       document.getElementById('signup-sub').textContent = `You'll start with the "${chosenTemplate.title}" template — free plan, no card required.`;
+    } else if (nextStep === 'billing') {
+      document.getElementById('signup-sub').textContent = `Create your free account first — you'll land straight on checkout next.`;
     }
 
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
@@ -63,6 +68,12 @@
         if (chosenTemplate) {
           const id = await createScorecardFromTemplate(chosenTemplate);
           window.location.href = `/builder.html?id=${id}`;
+          return;
+        }
+        if (nextStep === 'billing') {
+          const forward = new URLSearchParams(location.search);
+          forward.delete('next');
+          window.location.href = `/billing.html?${forward.toString()}`;
           return;
         }
         window.location.href = '/dashboard.html';

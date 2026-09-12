@@ -23,8 +23,8 @@
       <li><a href="pricing.html">Pricing</a></li>
     </ul>
     <div class="nav-cta">
-      <a href="pricing.html" class="btn btn-ghost btn-sm">Login</a>
-      <a href="demo.html" class="btn btn-primary btn-sm">Get started free</a>
+      <a href="login.html" id="nav-login" class="btn btn-ghost btn-sm">Login</a>
+      <a href="signup.html" id="nav-cta" class="btn btn-primary btn-sm">Get started free</a>
     </div>
     <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
   </nav>
@@ -111,5 +111,18 @@
 </footer>
 
 <script src="script.js"></script>
+<script>
+  // Same "logged in?" nav swap as index.html — this page never had it, so it
+  // always showed Login/Get started even to a signed-in visitor.
+  fetch('/api/auth/me', { credentials: 'include' })
+    .then(res => {
+      if (!res.ok) return;
+      const loginLink = document.getElementById('nav-login');
+      if (loginLink) { loginLink.textContent = 'Dashboard'; loginLink.href = '/dashboard.html'; }
+      const navCta = document.getElementById('nav-cta');
+      if (navCta) navCta.style.display = 'none';
+    })
+    .catch(() => {});
+</script>
 </body>
 </html>

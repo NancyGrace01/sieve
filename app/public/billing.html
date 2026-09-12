@@ -223,15 +223,42 @@
       await renderCpl();
       await renderSubscription();
 
+      function selectTab(tabName) {
+        const tabBtn = document.querySelector(`.bill-tab[data-tab="${tabName}"]`);
+        if (!tabBtn) return;
+        document.querySelectorAll('.bill-tab').forEach(t => t.classList.remove('active'));
+        tabBtn.classList.add('active');
+        document.querySelectorAll('.bill-panel').forEach(p => p.style.display = 'none');
+        document.getElementById('tab-' + tabName).style.display = 'block';
+      }
+
       document.querySelectorAll('.bill-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.bill-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          document.querySelectorAll('.bill-panel').forEach(p => p.style.display = 'none');
-          document.getElementById('tab-' + tab.dataset.tab).style.display = 'block';
-        });
+        tab.addEventListener('click', () => selectTab(tab.dataset.tab));
       });
-    })();
+
+      // Arriving from a pricing.html checkout CTA (directly, or via Signup)
+      // carries ?tab=&bundle=&plan= — open straight to that tab and highlight
+      // the specific card so the visitor just needs one more click to pay.
+      function highlightCard(selector) {
+        const el = document.querySelector(selector);
+        if (!el) return;
+        const card = el.closest('.plan-mini') || el;
+        card.classList.add('bill-highlight');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => card.classList.remove('bill-highlight'), 4000);
+      }
+
+      const deepLink = new URLSearchParams(location.search);
+      const deepLinkTab = deepLink.get('tab');
+      if (['credits', 'cpl', 'subscription'].includes(deepLinkTab)) {
+        selectTab(deepLinkTab);
+        const bundle = deepLink.get('bundle');
+        if (bundle) highlightCard(`[data-buy="${bundle}"]`);
+        const plan = deepLink.get('plan');
+        if (plan) highlightCard(`[data-pay="${plan}"]`);
+        if (deepLinkTab === 'cpl') highlightCard('#cpl-box .plan-mini');
+      }
+      })();
   </script>
 </body>
 </html>
