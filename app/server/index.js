@@ -49,6 +49,14 @@ app.use('/take', express.static(path.join(__dirname, '..', 'take'), { dotfiles: 
 // being served, not just app/server specifically.
 app.use(express.static(path.join(__dirname, '..', '..'), { dotfiles: 'deny' }));
 
+// Catch-all error handler — without this, any route that calls next(err)
+// falls through to Express's own default error page, which is HTML, not
+// JSON. Every route in this app returns JSON, so its errors should too.
+app.use((err, req, res, next) => {
+  console.error('[error]', err);
+  res.status(500).json({ error: 'Something went wrong on our end.' });
+});
+
 const PORT = process.env.PORT || 5500;
 if (require.main === module) {
   migrate()

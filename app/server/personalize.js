@@ -108,6 +108,71 @@ function categoryMessage(label, score, role, seed) {
   return base;
 }
 
+const CATEGORY_HEADLINE_BASE = {
+  strong: [
+    l => `${l} is carrying real weight here — the job now is protecting it, not fixing it.`,
+    l => `${l} is a genuine strength. Everything else gets easier once one part of the picture is already solid.`,
+    l => `Keep leaning on ${l.toLowerCase()} — it's doing more for the overall result than it might seem.`,
+  ],
+  developing: [
+    l => `${l} is steady, not yet a strength — a realistic, achievable path forward, not a fundamental problem.`,
+    l => `There's real room to grow in ${l.toLowerCase()}, and closing even part of that gap changes the whole picture.`,
+    l => `${l} is worth deliberate attention next — not urgent, but not something to leave on autopilot either.`,
+  ],
+  weak: [
+    l => `${l} is the clearest place to focus first — closing this gap would move the whole result.`,
+    l => `A real shortfall in ${l.toLowerCase()} is worth treating as a genuine priority, not an afterthought.`,
+    l => `${l} needs the most attention of anything measured here — and now there's no guesswork about where to start.`,
+  ],
+};
+
+function categoryHeadline(label, band3, seed) {
+  return pick(`${seed}:headline`, CATEGORY_HEADLINE_BASE[band3])(label);
+}
+
+const CATEGORY_CHECKLIST_BASE = {
+  strong: [
+    [
+      { label: 'Protect what works', text: 'Write down what you\'re actually doing right here so it survives changes in routine, team, or attention.' },
+      { label: 'Raise the bar', text: 'A strength that stops improving quietly becomes average — set a slightly higher target here, not just a maintenance one.' },
+      { label: 'Use it as leverage', text: 'Let this be the model for the areas that need more work — whatever\'s making this strong is probably transferable.' },
+    ],
+    [
+      { label: 'Document the "why"', text: 'Knowing exactly why this is working makes it repeatable, not just lucky.' },
+      { label: 'Stress-test it', text: 'Check whether this holds up under more pressure or scale, not just in ordinary conditions.' },
+      { label: 'Share it', text: 'If this involves other people, make sure whatever\'s working here isn\'t sitting only with one person.' },
+    ],
+  ],
+  developing: [
+    [
+      { label: 'Get specific', text: 'Write down exactly what "better" would look like here — vague goals rarely close a real gap.' },
+      { label: 'Pick one lever', text: 'Choose the single change most likely to move this, rather than trying to fix everything about it at once.' },
+      { label: 'Set a check-in point', text: 'Decide now when you\'ll revisit this — progress that isn\'t checked tends to quietly stall.' },
+    ],
+    [
+      { label: 'Find the pattern', text: 'Look for what\'s actually causing this to sit in the middle rather than treating it as one-off bad luck.' },
+      { label: 'Borrow what works elsewhere', text: 'Whatever\'s helping your stronger areas is probably at least partly transferable here.' },
+      { label: 'Track it, don\'t just note it', text: 'A gap that\'s measured over time is far more likely to actually close.' },
+    ],
+  ],
+  weak: [
+    [
+      { label: 'Name the real cause', text: 'Be honest about why this is lagging — a vague sense of "needs work" won\'t fix it, a specific cause might.' },
+      { label: 'Start smaller than feels necessary', text: 'A weak area rarely gets fixed by one big push — a small, consistent change is more likely to stick.' },
+      { label: 'Get outside input', text: 'This is exactly the kind of gap where a second, more experienced perspective tends to help the most.' },
+    ],
+    [
+      { label: 'Make it the priority', text: 'Put this above lower-stakes items on your list — it\'s likely doing more damage to the overall picture than it appears to.' },
+      { label: 'Set one concrete next step', text: 'Not a goal — an actual action you can take this week, however small.' },
+      { label: 'Revisit soon', text: 'Check back on this specifically and often; gaps like this tend to close faster once they\'re being actively watched.' },
+    ],
+  ],
+};
+
+function categoryChecklist(band3, seed) {
+  return pick(`${seed}:checklist`, CATEGORY_CHECKLIST_BASE[band3]);
+}
+
 // --- Tier headline & message, driven by the overall score --------------
 
 const TIER_HEADLINE = {
