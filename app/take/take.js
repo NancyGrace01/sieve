@@ -14,6 +14,11 @@
 
   if (params.get('embed') === '1') document.body.classList.add('is-embed');
 
+  // Preview mode — opened from the builder's Preview button so an owner can
+  // click through their own scorecard before publishing it. Hits the
+  // authenticated /api/scorecards/preview/* routes (owner-only, works
+  // regardless of published state) instead of the public ones, and never
+  // records a lead on submit.
   const isPreview = params.get('preview') === '1';
   if (isPreview) {
     document.body.classList.add('is-preview');
@@ -24,11 +29,11 @@
   }
 
   let scorecard;
-    try {
-      const res = await fetch(isPreview
-        ? `/api/scorecards/preview/${encodeURIComponent(slug)}`
-        : `/api/public/scorecards/${encodeURIComponent(slug)}`,
-        isPreview ? { credentials: 'include' } : undefined);
+  try {
+    const res = await fetch(isPreview
+      ? `/api/scorecards/preview/${encodeURIComponent(slug)}`
+      : `/api/public/scorecards/${encodeURIComponent(slug)}`,
+      isPreview ? { credentials: 'include' } : undefined);
     if (!res.ok) throw new Error((await res.json()).error || 'Not found');
     scorecard = await res.json();
   } catch (err) {
@@ -148,6 +153,8 @@
       startTime = Date.now();
       // Fire-and-forget — powers the completion-rate figure in the owner's
       // aggregate report; never blocks the visitor moving to question 1.
+      // Skipped in preview so clicking through your own draft doesn't
+      // pollute that figure with test runs.
       if (!isPreview) {
         fetch(`/api/public/scorecards/${encodeURIComponent(slug)}/start`, { method: 'POST' }).catch(() => {});
       }
@@ -195,6 +202,119 @@
   }
 
   const BAND_COLOR = { strong: '#16825D', developing: '#B3720C', weak: '#B3261E' };
+  const BAND_LEGEND_LABEL = { strong: 'Strong', developing: 'Developing', weak: 'Needs focus' };
+
+  // Category icons — picked by keyword match against the category's own
+  // label. A fixed, known set of categories (like a reference product built
+  // for one specific assessment) can hand-pick the exact right icon per
+  // category; Sieve's categories are whatever a business types into the
+  // builder, so there's no way to know in advance what any given label means.
+  // This gets a reasonable icon for common cases and falls back to a plain
+  // target icon rather than guessing wrong.
+  const CATEGORY_ICONS = {
+    team: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21c0-3.3 3.6-6 8-6s8 2.7 8 6"/>',
+    people: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21c0-3.3 3.6-6 8-6s8 2.7 8 6"/>',
+    leadership: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21c0-3.3 3.6-6 8-6s8 2.7 8 6"/>',
+    decision: '<path d="M12 3v6M12 9 6 20M12 9l6 11"/>',
+    strategy: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    strategic: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    planning: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    problem: '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2Z"/>',
+    time: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/>',
+    budget: '<path d="M3 6h18v12H3z"/><circle cx="12" cy="12" r="2.5"/>',
+    finance: '<path d="M3 6h18v12H3z"/><circle cx="12" cy="12" r="2.5"/>',
+    price: '<path d="M3 6h18v12H3z"/><circle cx="12" cy="12" r="2.5"/>',
+    communication: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    marketing: '<path d="m3 11 18-8-8 18-2-8-8-2Z"/>',
+    sales: '<path d="m3 11 18-8-8 18-2-8-8-2Z"/>',
+    growth: '<path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/>',
+    quality: '<path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7Z"/>',
+    safety: '<path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7Z"/>',
+    risk: '<path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7Z"/>',
+    tech: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/>',
+    digital: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/>',
+  };
+  const DEFAULT_ICON = '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5"/>';
+
+  function categoryIconSvg(label) {
+    const lower = label.toLowerCase();
+    const key = Object.keys(CATEGORY_ICONS).find(k => lower.includes(k));
+    const inner = CATEGORY_ICONS[key] || DEFAULT_ICON;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  }
+
+  // Segmented result donut — one equal-width arc per category, coloured by
+  // that category's band (same colours as the bars/legend), with the overall
+  // score in the centre and a labelled leader line to each slice. Falls back
+  // to a single solid ring (the original design) when there's only one
+  // category, since a "segmented" ring of one slice is just a ring.
+  function buildResultDonut(categories, overall) {
+    const size = 260;
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = 80;
+    const circumference = 2 * Math.PI * r;
+
+    if (categories.length <= 1) {
+      const color = categories.length ? (BAND_COLOR[categories[0].band] || 'var(--accent)') : 'var(--accent)';
+      return `
+        <div class="score-ring" style="--pct:${overall};--ring-color:${color};">
+          <div class="score-ring-inner">
+            <div class="score-ring-num">${overall}%</div>
+            <div class="score-ring-label">OVERALL SCORE</div>
+          </div>
+        </div>`;
+    }
+
+    const gapDeg = 6; // visual gap between slices, in degrees
+    const sliceDeg = 360 / categories.length;
+    const arcDeg = sliceDeg - gapDeg;
+    const arcLen = (arcDeg / 360) * circumference;
+
+    let cumulativeDeg = -90; // start at 12 o'clock
+    const arcs = [];
+    const labels = [];
+    categories.forEach((c) => {
+      const startDeg = cumulativeDeg + gapDeg / 2;
+      const midDeg = startDeg + arcDeg / 2;
+      const dashOffset = -((startDeg + 90) / 360) * circumference;
+      arcs.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${BAND_COLOR[c.band] || 'var(--accent)'}"
+        stroke-width="20" stroke-linecap="round"
+        stroke-dasharray="${arcLen} ${circumference - arcLen}"
+        stroke-dashoffset="${dashOffset}" />`);
+
+      const rad = (midDeg * Math.PI) / 180;
+      const labelR = r + 34;
+      const lineR1 = r + 12;
+      const lineR2 = r + 26;
+      const x1 = cx + lineR1 * Math.cos(rad);
+      const y1 = cy + lineR1 * Math.sin(rad);
+      const x2 = cx + lineR2 * Math.cos(rad);
+      const y2 = cy + lineR2 * Math.sin(rad);
+      const lx = cx + labelR * Math.cos(rad);
+      const ly = cy + labelR * Math.sin(rad);
+      const anchor = Math.cos(rad) > 0.15 ? 'start' : Math.cos(rad) < -0.15 ? 'end' : 'middle';
+      labels.push(`
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)" stroke-width="1.5" />
+        <text x="${lx}" y="${ly - 4}" text-anchor="${anchor}" class="donut-label-pct" fill="${BAND_COLOR[c.band] || 'var(--ink)'}">${c.score}%</text>
+        <text x="${lx}" y="${ly + 11}" text-anchor="${anchor}" class="donut-label-name">${escapeHtml(c.label)}</text>
+      `);
+      cumulativeDeg += sliceDeg;
+    });
+
+    return `
+      <div class="result-donut-wrap">
+        <svg viewBox="0 0 ${size} ${size}" class="result-donut">
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line)" stroke-width="20" />
+          ${arcs.join('')}
+          ${labels.join('')}
+        </svg>
+        <div class="result-donut-center">
+          <div class="score-ring-num">${overall}%</div>
+          <div class="score-ring-label">OVERALL SCORE</div>
+        </div>
+      </div>`;
+  }
 
   function formatDuration(seconds) {
     if (seconds < 60) return `${seconds}s`;
@@ -239,14 +359,41 @@
 
     const p = result.personalization;
 
-    const categoryRows = p.categoryNarratives.map(c => `
-      <div class="result-cat-row">
-        <div class="result-cat-name">${escapeHtml(c.label)}</div>
-        <div class="result-cat-bar"><div class="result-cat-fill" style="width:${c.score}%;background:${BAND_COLOR[c.band] || 'var(--blue)'};"></div></div>
-        <div class="result-cat-pct">${c.score}%</div>
+    const donutBlock = buildResultDonut(p.categoryNarratives, p.overall);
+
+    const legendBlock = p.categoryNarratives.length > 1 ? `
+      <div class="result-legend">
+        ${['weak', 'developing', 'strong'].map(band => `
+          <span class="result-legend-item"><span class="result-legend-dot" style="background:${BAND_COLOR[band]}"></span>${BAND_LEGEND_LABEL[band]}</span>
+        `).join('')}
       </div>
-      <p class="result-cat-message">${escapeHtml(c.message)}</p>
+    ` : '';
+
+    const catTabs = p.categoryNarratives.map((c, i) => `
+      <button class="result-tab${i === 0 ? ' active' : ''}" data-cat-tab="${c.key}">${escapeHtml(c.label)}</button>
     `).join('');
+
+    const catPanels = p.categoryNarratives.map((c, i) => `
+      <div class="result-cat-panel${i === 0 ? ' active' : ''}" data-cat-panel="${c.key}">
+        <div class="result-cat-card">
+          <div class="result-cat-card-top">
+            <div class="result-cat-icon" style="color:${BAND_COLOR[c.band] || 'var(--accent)'}">${categoryIconSvg(c.label)}</div>
+            <div class="result-cat-title">${escapeHtml(c.label)}</div>
+            <div class="result-cat-badge" style="background:${BAND_COLOR[c.band] || 'var(--accent)'}">${c.score}%</div>
+          </div>
+          <h3 class="result-cat-headline">${escapeHtml(c.headline)}</h3>
+          <p class="result-cat-message">${escapeHtml(c.message)}</p>
+          <ul class="result-cat-checklist">
+            ${c.checklist.map(item => `<li><span class="chk">✓</span><span><strong>${escapeHtml(item.label)}:</strong> ${escapeHtml(item.text)}</span></li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `).join('');
+
+    const categoryDeepDive = p.categoryNarratives.length ? `
+      ${p.categoryNarratives.length > 1 ? `<div class="result-tabs">${catTabs}</div>` : ''}
+      <div class="result-tab-panels">${catPanels}</div>
+    ` : '';
 
     const insightsBlock = p.answerInsights.length ? `
       <div class="result-insights">
@@ -286,32 +433,31 @@
     });
     const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
+    // Preview submissions never create a lead, so there's no reportUrl and
+    // nothing was emailed — say that plainly instead of the real closing
+    // copy, and skip the PDF-download link (there's no PDF behind it).
     const resultFooter = result.preview
       ? `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">This was a preview — no lead was recorded, and no email or PDF was sent.</p>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
-        </div>`
+         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+           <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
+         </div>`
       : `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">
-          ${lead.email ? `Your full personalised report has also been emailed to ${escapeHtml(lead.email)}.` : 'Thanks — your results have been recorded.'}
-        </p>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
-          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
-        </div>`;
+           ${lead.email ? `Your full personalised report has also been emailed to ${escapeHtml(lead.email)}.` : 'Thanks — your results have been recorded.'}
+         </p>
+         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+           <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
+           <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
+         </div>`;
 
     root.innerHTML = `
       <div class="demo-body demo-result">
         <p class="result-greeting">Hi ${escapeHtml(p.greetingName)}, here's your result</p>
         <div class="result-tier">${escapeHtml(p.tierHeadline)}</div>
-        <div class="score-ring" style="--pct:${p.overall}">
-          <div class="score-ring-inner">
-            <div class="score-ring-num">${p.overall}%</div>
-            <div class="score-ring-label">OVERALL SCORE</div>
-          </div>
-        </div>
+        ${donutBlock}
+        ${legendBlock}
         ${p.tierMessage ? `<p class="result-tier-message">${escapeHtml(p.tierMessage)}</p>` : ''}
         ${engagementBlock}
-        <div class="result-cats">${categoryRows}</div>
+        ${categoryDeepDive}
         ${insightsBlock}
         ${ctaBlock}
         ${resultFooter}
@@ -319,6 +465,14 @@
     `;
     const bar = document.querySelector('.demo-progress-wrap');
     if (bar) bar.style.display = 'none';
+
+    root.querySelectorAll('[data-cat-tab]').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const key = tab.dataset.catTab;
+        root.querySelectorAll('[data-cat-tab]').forEach(t => t.classList.toggle('active', t === tab));
+        root.querySelectorAll('[data-cat-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.catPanel === key));
+      });
+    });
 
     const shareBtn = document.getElementById('share-btn');
     if (shareBtn) {

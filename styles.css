@@ -442,6 +442,50 @@ table.compare tr:last-child td { border-bottom: none; }
 .result-cta-headline { font-family: var(--font-display); font-size: 16.5px; font-weight: 800; color: var(--accent-ink); margin-bottom: 8px; }
 .result-cta p { font-size: 14px; color: var(--ink); margin-bottom: 14px; line-height: 1.5; }
 
+/* Segmented result donut — one arc per category, used whenever a scorecard
+   has more than one category (see buildResultDonut in take.js). */
+.result-donut-wrap { position: relative; width: 260px; height: 260px; margin: 0 auto 12px; }
+.result-donut { width: 100%; height: 100%; overflow: visible; }
+.result-donut circle { transition: stroke-dasharray .4s ease; }
+.donut-label-pct { font-family: var(--font-display); font-size: 13px; font-weight: 800; }
+.donut-label-name { font-size: 10.5px; font-weight: 700; fill: var(--ink-soft); }
+.result-donut-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.result-legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin: 4px 0 20px; }
+.result-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+.result-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* Per-category deep-dive — tabbed, one full card per category, matching the
+   reference's "pick a category, read its full breakdown" layout. */
+.result-tabs { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; margin: 28px 0 0; border-bottom: 1px solid var(--line); padding-bottom: 0; }
+.result-tab {
+  background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer;
+  font-size: 13.5px; font-weight: 700; color: var(--ink-faint); padding: 10px 14px; font-family: var(--font-body);
+}
+.result-tab:hover { color: var(--ink-soft); }
+.result-tab.active { color: var(--accent-ink); border-bottom-color: var(--accent); }
+.result-tab-panels { margin-top: 20px; }
+.result-cat-panel { display: none; }
+.result-cat-panel.active { display: block; animation: toast-in .2s ease; }
+.result-cat-card { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 24px; }
+.result-cat-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.result-cat-icon { width: 30px; height: 30px; flex-shrink: 0; }
+.result-cat-icon svg { width: 100%; height: 100%; }
+.result-cat-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; flex: 1; }
+.result-cat-badge { color: #fff; font-weight: 800; font-size: 13px; padding: 5px 12px; border-radius: 999px; flex-shrink: 0; }
+.result-cat-headline { font-size: 17px; font-weight: 800; line-height: 1.4; margin-bottom: 10px; }
+.result-cat-card .result-cat-message { font-size: 14px; color: var(--ink-soft); margin: 0 0 16px; padding: 0; }
+.result-cat-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.result-cat-checklist li { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+.result-cat-checklist .chk { flex-shrink: 0; margin-top: 1px; }
+.result-cat-checklist strong { color: var(--ink); }
+@media (max-width: 480px) {
+  .result-donut-wrap { width: 220px; height: 220px; }
+  .donut-label-name { display: none; }
+}
+
 /* ---------- On-screen alerts — replaces window.alert()/confirm() ---------- */
 #toast-stack {
   position: fixed; top: 20px; right: 20px; z-index: 9999;
