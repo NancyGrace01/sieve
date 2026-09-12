@@ -64,6 +64,7 @@
         <div class="wallet-mode ${MODE_COLORS[wallet.billingMode]}">${MODE_LABELS[wallet.billingMode]}</div>
         <div class="wallet-stats">
           <div><span class="wallet-num">${wallet.creditBalance}</span><span class="wallet-label">credits left</span></div>
+          <div><span class="wallet-num">${wallet.creditsUsed}</span><span class="wallet-label">credits used${wallet.creditsPurchasedTotal ? ` of ${wallet.creditsPurchasedTotal}` : ''}</span></div>
           <div><span class="wallet-num">${fmtNaira(wallet.cplRateKobo)}</span><span class="wallet-label">per qualified lead</span></div>
           <div><span class="wallet-num">${wallet.hasCardOnFile ? 'Yes' : 'No'}</span><span class="wallet-label">card on file</span></div>
         </div>
