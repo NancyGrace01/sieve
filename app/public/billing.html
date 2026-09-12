@@ -79,12 +79,12 @@
         renderCredits();
         renderCpl();
       } catch (ex) {
-        alert(ex.message);
+        showToast(ex.message);
       }
     }
 
     function payWithPaystack({ amount, metadata, onSuccess }) {
-      if (!paystackPublicKey) { alert('Paystack is not configured on this server yet.'); return; }
+      if (!paystackPublicKey) { showToast('Paystack is not configured on this server yet.'); return; }
       const handler = PaystackPop.setup({
         key: paystackPublicKey,
         email: currentUser.email,
@@ -123,11 +123,11 @@
               api('/billing/credits/verify', { method: 'POST', body: { reference, bundleKey } })
                 .then(async (res) => {
                   await api('/billing/mode', { method: 'POST', body: { mode: 'credits' } }).catch(() => {});
-                  alert(`Payment verified — ${res.creditsAdded} credits added.`);
+                  showToast(`Payment verified — ${res.creditsAdded} credits added.`);
                   await renderWallet();
                   renderCredits();
                 })
-                .catch(ex => alert(`Payment succeeded but verification failed: ${ex.message}`));
+                .catch(ex => showToast(`Payment succeeded but verification failed: ${ex.message}`));
             },
           });
         });
@@ -158,11 +158,11 @@
             api('/billing/cpl/save-card', { method: 'POST', body: { reference } })
               .then(async () => {
                 await api('/billing/mode', { method: 'POST', body: { mode: 'cpl' } }).catch(() => {});
-                alert('Card saved — pay-per-lead billing is now active.');
+                showToast('Card saved — pay-per-lead billing is now active.');
                 await renderWallet();
                 renderCpl();
               })
-              .catch(ex => alert(`Card charge succeeded but saving it failed: ${ex.message}`));
+              .catch(ex => showToast(`Card charge succeeded but saving it failed: ${ex.message}`));
           },
         });
       });
@@ -196,8 +196,8 @@
             metadata: { businessName: currentUser.business_name, plan },
             onSuccess: (reference) => {
               api('/billing/verify', { method: 'POST', body: { reference, plan } })
-                .then(() => { alert('Payment verified — plan updated.'); window.location.reload(); })
-                .catch(ex => alert(`Payment succeeded but verification failed: ${ex.message}`));
+                .then(() => { showToast('Payment verified — plan updated.'); window.location.reload(); })
+                .catch(ex => showToast(`Payment succeeded but verification failed: ${ex.message}`));
             },
           });
         });

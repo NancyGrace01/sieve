@@ -35,6 +35,15 @@
   font-family: var(--font-body); font-size: 15px; background: var(--surface); color: var(--ink);
 }
 .field textarea { resize: vertical; min-height: 70px; }
+.field-password { position: relative; }
+.field-password input { width: 100%; padding-right: 42px; }
+.field-password-toggle {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; padding: 0; color: var(--ink-faint);
+}
+.field-password-toggle:hover { color: var(--ink-soft); }
+.field-password-toggle svg { width: 18px; height: 18px; display: block; }
 .form-error {
   background: var(--badsoft, #FBE7E5); color: #B3261E; border-radius: var(--radius-sm);
   padding: 10px 14px; font-size: 13.5px; font-weight: 600; margin-bottom: 16px; display: none;
@@ -47,7 +56,11 @@
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 14px; }
 .page-head h1 { font-size: 1.7rem; }
 .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
-.sc-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 24px; display: flex; flex-direction: column; gap: 6px; }
+.sc-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 24px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.sc-card-thumb {
+  height: 110px; margin: -24px -24px 16px; background-size: cover; background-position: center;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
 .sc-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .sc-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
 .badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }

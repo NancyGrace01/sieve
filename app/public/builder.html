@@ -222,7 +222,7 @@
       });
       el.querySelectorAll('[data-remove-cat]').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          if (state.categories.length <= 1) return alert('A scorecard needs at least one category.');
+          if (state.categories.length <= 1) return showToast('A scorecard needs at least one category.');
           const idx = +e.target.dataset.removeCat;
           const removedKey = state.categories[idx].key;
           state.categories.splice(idx, 1);
@@ -291,7 +291,7 @@
       el.querySelectorAll('[data-remove-opt]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const [qi, oi] = e.target.dataset.removeOpt.split(':').map(Number);
-          if (state.questions[qi].options.length <= 2) return alert('A question needs at least two options.');
+          if (state.questions[qi].options.length <= 2) return showToast('A question needs at least two options.');
           state.questions[qi].options.splice(oi, 1);
           render();
         });
@@ -397,7 +397,7 @@
         setTimeout(() => statusEls.forEach(el => el.textContent = ''), 2000);
       } catch (ex) {
         statusEls.forEach(el => el.textContent = '');
-        alert(ex.message);
+        showToast(ex.message);
       }
     }
 

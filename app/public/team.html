@@ -56,7 +56,7 @@
         list.innerHTML = rows.join('');
         list.querySelectorAll('[data-remove]').forEach(btn => {
           btn.addEventListener('click', async () => {
-            if (!confirm('Remove this team member?')) return;
+            if (!(await showConfirm('Remove this team member?'))) return;
             await api(`/team/${btn.dataset.remove}`, { method: 'DELETE' });
             load();
           });

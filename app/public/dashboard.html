@@ -84,6 +84,7 @@
         renderStats(scorecards);
         content.innerHTML = `<div class="sc-grid">${scorecards.map(sc => `
           <div class="sc-card sc-card-${sc.published ? 'live' : 'draft'}">
+            ${sc.coverImage ? `<div class="sc-card-thumb" style="background-image:url('${escapeHtml(sc.coverImage)}');"></div>` : ''}
             <div class="sc-card-top">
               <div class="sc-title">${escapeHtml(sc.title)}</div>
               <span class="badge ${sc.published ? 'live' : 'draft'}">${sc.published ? 'Live' : 'Draft'}</span>
@@ -103,12 +104,12 @@
         content.querySelectorAll('[data-delete]').forEach(btn => {
           btn.addEventListener('click', async () => {
             const title = btn.dataset.title;
-            if (!confirm(`Delete "${title}"? This also permanently deletes all its leads. This can't be undone.`)) return;
+            if (!(await showConfirm(`Delete "${title}"? This also permanently deletes all its leads. This can't be undone.`))) return;
             try {
               await api(`/scorecards/${btn.dataset.delete}`, { method: 'DELETE' });
               load();
             } catch (err) {
-              alert(err.message || 'Could not delete this scorecard.');
+              showToast(err.message || 'Could not delete this scorecard.');
             }
           });
         });
@@ -119,7 +120,7 @@
           const { scorecard } = await api('/scorecards', { method: 'POST', body: { title: 'Untitled scorecard' } });
           window.location.href = `/builder.html?id=${scorecard.id}`;
         } catch (err) {
-          alert(err.message || 'Could not create a new scorecard.');
+          showToast(err.message || 'Could not create a new scorecard.');
         }
       }
 

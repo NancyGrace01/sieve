@@ -353,6 +353,7 @@ table.compare tr:last-child td { border-bottom: none; }
   height: 140px; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-weight: 800; font-size: 15px; color: var(--ink); text-align: center; padding: 16px;
 }
+.tpl-thumb.has-cover { background-size: cover; background-position: center; }
 .tpl-body { padding: 18px 20px 22px; }
 .tpl-tag { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); }
 .tpl-title { font-size: 16px; margin-top: 6px; font-weight: 700; }
@@ -440,6 +441,40 @@ table.compare tr:last-child td { border-bottom: none; }
 .result-cta-icon { font-size: 22px; margin-bottom: 6px; }
 .result-cta-headline { font-family: var(--font-display); font-size: 16.5px; font-weight: 800; color: var(--accent-ink); margin-bottom: 8px; }
 .result-cta p { font-size: 14px; color: var(--ink); margin-bottom: 14px; line-height: 1.5; }
+
+/* ---------- On-screen alerts — replaces window.alert()/confirm() ---------- */
+#toast-stack {
+  position: fixed; top: 20px; right: 20px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 10px; max-width: 360px;
+}
+.toast {
+  background: var(--ink); color: #fff; padding: 14px 16px; border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg); font-size: 13.5px; font-weight: 600; line-height: 1.4;
+  display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+  animation: toast-in .2s ease;
+}
+.toast-icon { flex-shrink: 0; font-size: 15px; }
+.toast-error { background: #B3261E; }
+.toast-success { background: #16825D; }
+.toast-info { background: var(--ink); }
+.toast.leaving { animation: toast-out .18s ease forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(20px); } }
+
+.confirm-overlay {
+  position: fixed; inset: 0; background: rgba(10,12,26,.5); z-index: 9998;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.confirm-box {
+  background: var(--surface); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  max-width: 380px; width: 100%; padding: 24px;
+}
+.confirm-box p { font-size: 14.5px; color: var(--ink); margin-bottom: 20px; line-height: 1.5; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+@media (max-width: 480px) {
+  #toast-stack { left: 16px; right: 16px; max-width: none; }
+}
 
 /* ---------- Utilities ---------- */
 .text-center { text-align: center; }
