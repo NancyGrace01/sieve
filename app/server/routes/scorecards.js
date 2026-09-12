@@ -1,13 +1,53 @@
 const express = require('express');
 const crypto = require('node:crypto');
 const QRCode = require('qrcode');
+const path = require('node:path');
+const fs = require('node:fs');
+const multer = require('multer');
 const { run, get, all } = require('../db');
 const requireAuth = require('../middleware/requireAuth');
+const { computeScore } = require('../scoring');
+const { buildPersonalizedResult } = require('../personalize');
+const { publicProfileCapture, resolveBrandName } = require('./public');
 const { AGE_RANGES, GENDERS, SOCIAL_CLASSES, LOCATIONS, sanitizeProfileCapture, parseProfileCapture } = require('../demographics');
 const { appUrl } = require('../mailer');
 
 const router = express.Router();
 router.use(requireAuth);
+
+// Cover-image uploads land in app/public/uploads, which is already served
+// statically at the site root (see index.js) — so a saved file is reachable
+// at /uploads/<filename> with no new static route needed.
+//
+// NOTE for deploying this: on Railway (or any host with an ephemeral
+// filesystem), anything written here is wiped on the next deploy unless a
+// persistent Volume is mounted at this path. Fine for local testing; for
+// production, either attach a Volume at app/public/uploads or swap this for
+// an object-storage upload (S3/Cloudinary/etc.) later — the route below
+// returns a plain URL either way, so nothing else has to change if you do.
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'public', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const COVER_IMAGE_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
+const coverImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOAD_DIR,
+    filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}${COVER_IMAGE_EXT[file.mimetype] || ''}`),
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (!COVER_IMAGE_EXT[file.mimetype]) return cb(new Error('Please upload a JPG, PNG, WEBP, or GIF image.'));
+    cb(null, true);
+  },
+});
+
+router.post('/upload-cover', (req, res) => {
+  coverImageUpload.single('cover')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message || 'Upload failed.' });
+    if (!req.file) return res.status(400).json({ error: 'No file received.' });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  });
+});
 
 function slugify(text) {
   return text.toLowerCase().trim()
@@ -365,6 +405,72 @@ router.get('/:id/qr.png', async (req, res, next) => {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Content-Disposition', `inline; filename="${row.slug}-qr.png"`);
     res.send(buffer);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/preview/:slug', async (req, res, next) => {
+  try {
+    const row = await get('SELECT * FROM scorecards WHERE slug = ? AND user_id = ?', [req.params.slug, req.user.id]);
+    if (!row) return res.status(404).json({ error: 'Scorecard not found.' });
+
+    const questions = JSON.parse(row.questions).map(q => ({
+      text: q.text,
+      options: q.options.map(o => ({ label: o.label })),
+    }));
+
+    res.json({
+      slug: row.slug,
+      title: row.title,
+      intro: row.intro,
+      brandName: await resolveBrandName(row),
+      coverImage: row.cover_image || '',
+      engagementMode: !!row.engagement_mode,
+      shareTemplate: row.share_template || '',
+      profileCapture: publicProfileCapture(row),
+      questions,
+      preview: true,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/preview/:slug/submit', async (req, res, next) => {
+  try {
+    const row = await get('SELECT * FROM scorecards WHERE slug = ? AND user_id = ?', [req.params.slug, req.user.id]);
+    if (!row) return res.status(404).json({ error: 'Scorecard not found.' });
+
+    const { firstName, lastName, phone, email, answers, timeToCompleteSeconds } = req.body || {};
+    const questions = JSON.parse(row.questions);
+
+    if (!Array.isArray(answers) || answers.length !== questions.length) {
+      return res.status(400).json({ error: 'Answers do not match this scorecard.' });
+    }
+    for (let i = 0; i < questions.length; i += 1) {
+      const idx = answers[i];
+      if (!Number.isInteger(idx) || idx < 0 || idx >= questions[i].options.length) {
+        return res.status(400).json({ error: `Invalid answer for question ${i + 1}.` });
+      }
+    }
+
+    const { categoryScores, overall, tier } = computeScore(row, answers);
+    const lead = { firstName, lastName, phone, email };
+    const personalization = buildPersonalizedResult({
+      scorecard: row, lead, answers, categoryScores, overall, tierLabel: tier, leadId: `preview:${row.id}`,
+    });
+
+    res.status(201).json({
+      preview: true,
+      brandName: await resolveBrandName(row),
+      personalization,
+      engagementMode: !!row.engagement_mode,
+      shareTemplate: row.share_template || '',
+      timeToCompleteSeconds: Number.isFinite(timeToCompleteSeconds) && timeToCompleteSeconds >= 0
+        ? Math.round(timeToCompleteSeconds)
+        : null,
+    });
   } catch (err) {
     next(err);
   }

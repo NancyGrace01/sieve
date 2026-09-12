@@ -44,20 +44,39 @@ function buildReportPdf(personalization, businessName) {
   doc.fillColor(INK).font('Helvetica-Bold').fontSize(13).text('Your breakdown, category by category');
   doc.moveDown(0.6);
 
-  personalization.categoryNarratives.forEach(cat => {
-    const barY = doc.y + 4;
-    const barWidth = 160;
-    doc.fillColor(INK).font('Helvetica-Bold').fontSize(11).text(`${cat.label} — ${cat.score}%`, { continued: false });
-    doc.moveDown(0.1);
+    personalization.categoryNarratives.forEach(cat => {
+      const barY = doc.y + 4;
+      const barWidth = 160;
+      doc.fillColor(INK).font('Helvetica-Bold').fontSize(11).text(`${cat.label} — ${cat.score}%`, { continued: false });
+      doc.moveDown(0.1);
 
-    // score bar
-    doc.roundedRect(doc.x, doc.y, barWidth, 6, 3).fillColor('#EEEBE2').fill();
-    doc.roundedRect(doc.x, doc.y, Math.max(6, (barWidth * cat.score) / 100), 6, 3).fillColor(BAND_COLOR[cat.band] || INK_SOFT).fill();
-    doc.moveDown(0.5);
+      doc.roundedRect(doc.x, doc.y, barWidth, 6, 3).fillColor('#EEEBE2').fill();
+      doc.roundedRect(doc.x, doc.y, Math.max(6, (barWidth * cat.score) / 100), 6, 3).fillColor(BAND_COLOR[cat.band] || INK_SOFT).fill();
+      doc.moveDown(0.5);
 
-    doc.fillColor(INK_SOFT).font('Helvetica').fontSize(10.5).text(cat.message, { width: pageWidth, lineGap: 2 });
-    doc.moveDown(0.9);
-  });
+      // Headline + message + checklist — same three fields the on-screen result
+      // and the email render for this category, so the PDF stays in sync with
+      // both rather than showing a thinner version of the same result.
+      if (cat.headline) {
+        doc.fillColor(INK).font('Helvetica-Bold').fontSize(11).text(cat.headline, { width: pageWidth, lineGap: 1 });
+        doc.moveDown(0.25);
+      }
+      doc.fillColor(INK_SOFT).font('Helvetica').fontSize(10.5).text(cat.message, { width: pageWidth, lineGap: 2 });
+      doc.moveDown(0.4);
+
+      // pdfkit's Helvetica is a standard PDF font (WinAnsi encoding only) — a
+      // real ✓ glyph isn't in that character set and renders as garbage, so the
+      // PDF uses a plain bullet here instead. The email (real HTML/UTF-8) still
+      // uses an actual checkmark.
+      (cat.checklist || []).forEach(item => {
+        doc.fillColor(INK_SOFT).font('Helvetica').fontSize(10)
+          .text('• ', { continued: true })
+          .font('Helvetica-Bold').fillColor(INK).text(`${item.label}: `, { continued: true })
+          .font('Helvetica').fillColor(INK_SOFT).text(item.text, { width: pageWidth, lineGap: 1 });
+      });
+
+      doc.moveDown(0.9);
+    });
 
   // Answer-level insights, weakest categories already surfaced first upstream
   if (personalization.answerInsights.length) {

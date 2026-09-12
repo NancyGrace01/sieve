@@ -274,3 +274,5 @@ router.get('/leads/:leadId/report.pdf', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.publicProfileCapture = publicProfileCapture;
+module.exports.resolveBrandName = resolveBrandName;

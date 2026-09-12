@@ -34,9 +34,14 @@
           </div>
           <div class="field">
             <label>Cover image (optional)</label>
-            <input type="url" id="cover-image" placeholder="Paste an image URL — shown behind the intro and the name/phone/email gate" />
+            <div class="cover-upload-row">
+              <button type="button" class="btn btn-ghost btn-sm" id="cover-upload-btn">Upload image</button>
+              <input type="file" id="cover-upload-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+              <span id="cover-upload-status" class="builder-hint" style="margin:0;"></span>
+            </div>
+            <input type="url" id="cover-image" placeholder="…or paste an image URL instead" style="margin-top:8px;" />
             <div id="cover-preview" class="cover-preview" style="display:none;"><img id="cover-preview-img" alt="Cover preview" /></div>
-            <p class="builder-hint" style="margin-top:6px;">A template already comes with a default cover — paste your own link here to replace it with your own photo or brand image.</p>
+            <p class="builder-hint" style="margin-top:6px;">A template already comes with a default cover — leave this as-is, upload your own photo or brand image, or paste a link to one you already have hosted somewhere.</p>
           </div>
         </div>
 
@@ -373,8 +378,7 @@
       }
 
       const previewBtn = document.getElementById('preview-btn');
-      previewBtn.disabled = !state.published;
-      previewBtn.title = state.published ? '' : 'Publish first to preview the live page';
+      previewBtn.title = state.published ? 'Open the live scorecard' : 'Preview this draft — nothing you submit here is saved as a lead';
     }
 
     function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -415,6 +419,33 @@
       document.getElementById('brand-name').addEventListener('input', (e) => { state.brandName = e.target.value; });
       document.getElementById('cover-image').addEventListener('input', (e) => { state.coverImage = e.target.value; renderCoverPreview(); });
 
+      const coverUploadBtn = document.getElementById('cover-upload-btn');
+      const coverUploadInput = document.getElementById('cover-upload-input');
+      const coverUploadStatus = document.getElementById('cover-upload-status');
+      coverUploadBtn.addEventListener('click', () => coverUploadInput.click());
+      coverUploadInput.addEventListener('change', async () => {
+        const file = coverUploadInput.files[0];
+        if (!file) return;
+        coverUploadStatus.textContent = 'Uploading…';
+        coverUploadBtn.disabled = true;
+        try {
+          const form = new FormData();
+          form.append('cover', file);
+          const res = await fetch('/api/scorecards/upload-cover', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Upload failed.');
+          state.coverImage = data.url;
+          document.getElementById('cover-image').value = data.url;
+          renderCoverPreview();
+          coverUploadStatus.textContent = 'Uploaded ✓';
+        } catch (err) {
+          coverUploadStatus.textContent = err.message || 'Upload failed.';
+        } finally {
+          coverUploadBtn.disabled = false;
+          coverUploadInput.value = '';
+        }
+      });
+
       document.getElementById('pc-enabled').addEventListener('change', (e) => {
         state.profileCapture.enabled = e.target.checked;
         document.getElementById('pc-fields').style.display = e.target.checked ? 'block' : 'none';
@@ -454,9 +485,10 @@
         renderPublish();
       });
 
-      document.getElementById('preview-btn').addEventListener('click', () => {
-        if (!state.published) return;
-        window.open(`/take/index.html?slug=${state.slug}`, '_blank');
+      document.getElementById('preview-btn').addEventListener('click', async () => {
+        const win = window.open('', '_blank');
+        await save();
+        if (win) win.location.href = `/take/index.html?slug=${state.slug}&preview=1`;
       });
 
       document.getElementById('copy-link').addEventListener('click', () => {

@@ -14,9 +14,21 @@
 
   if (params.get('embed') === '1') document.body.classList.add('is-embed');
 
+  const isPreview = params.get('preview') === '1';
+  if (isPreview) {
+    document.body.classList.add('is-preview');
+    const banner = document.createElement('div');
+    banner.className = 'preview-banner';
+    banner.textContent = 'Preview — this is a draft. Nothing submitted here is saved as a lead.';
+    document.body.prepend(banner);
+  }
+
   let scorecard;
-  try {
-    const res = await fetch(`/api/public/scorecards/${encodeURIComponent(slug)}`);
+    try {
+      const res = await fetch(isPreview
+        ? `/api/scorecards/preview/${encodeURIComponent(slug)}`
+        : `/api/public/scorecards/${encodeURIComponent(slug)}`,
+        isPreview ? { credentials: 'include' } : undefined);
     if (!res.ok) throw new Error((await res.json()).error || 'Not found');
     scorecard = await res.json();
   } catch (err) {
@@ -136,7 +148,9 @@
       startTime = Date.now();
       // Fire-and-forget — powers the completion-rate figure in the owner's
       // aggregate report; never blocks the visitor moving to question 1.
-      fetch(`/api/public/scorecards/${encodeURIComponent(slug)}/start`, { method: 'POST' }).catch(() => {});
+      if (!isPreview) {
+        fetch(`/api/public/scorecards/${encodeURIComponent(slug)}/start`, { method: 'POST' }).catch(() => {});
+      }
       step = 0;
       render();
     });
@@ -208,9 +222,12 @@
 
     let result;
     try {
-      const res = await fetch(`/api/public/scorecards/${encodeURIComponent(slug)}/submit`, {
+      const res = await fetch(isPreview
+        ? `/api/scorecards/preview/${encodeURIComponent(slug)}/submit`
+        : `/api/public/scorecards/${encodeURIComponent(slug)}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: isPreview ? 'include' : 'same-origin',
         body: JSON.stringify({ ...lead, answers, profile, timeToCompleteSeconds }),
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Could not submit.');
@@ -269,6 +286,19 @@
     });
     const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
+    const resultFooter = result.preview
+      ? `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">This was a preview — no lead was recorded, and no email or PDF was sent.</p>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
+        </div>`
+      : `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">
+          ${lead.email ? `Your full personalised report has also been emailed to ${escapeHtml(lead.email)}.` : 'Thanks — your results have been recorded.'}
+        </p>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
+          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
+        </div>`;
+
     root.innerHTML = `
       <div class="demo-body demo-result">
         <p class="result-greeting">Hi ${escapeHtml(p.greetingName)}, here's your result</p>
@@ -284,13 +314,7 @@
         <div class="result-cats">${categoryRows}</div>
         ${insightsBlock}
         ${ctaBlock}
-        <p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">
-          ${lead.email ? `Your full personalised report has also been emailed to ${escapeHtml(lead.email)}.` : 'Thanks — your results have been recorded.'}
-        </p>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
-          <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
-        </div>
+        ${resultFooter}
       </div>
     `;
     const bar = document.querySelector('.demo-progress-wrap');

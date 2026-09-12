@@ -586,3 +586,9 @@ table.compare tr:last-child td { border-bottom: none; }
   .demo-body { padding: 26px; }
   .demo-progress-wrap { padding: 14px 26px; }
 }
+.preview-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50; text-align: center;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 13.5px;
+  padding: 8px 16px;
+}
+body.is-preview { padding-top: 48px; }

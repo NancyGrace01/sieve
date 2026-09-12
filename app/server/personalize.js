@@ -249,19 +249,25 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
   const weakestIsNotable = ['developing', 'weak', 'struggling'].includes(bandFor(weakest.score));
   const strongestIsNotable = ['exceptional', 'strong', 'solid'].includes(bandFor(strongest.score));
 
-  const categoryNarratives = ranked.map(c => {
+    // Built from `categories` (the scorecard's own defined order), not `ranked`
+  // (sorted by score) — the donut/legend/tabs on the result page need a fixed
+  // order that stays the same for every lead, the way the ScoreApp reference
+  // does. `ranked` is still used to decide which category gets the
+  // weakest/strongest "role" framing.
+  const categoryNarratives = categories.map(cat => {
+    const c = ranked.find(r => r.key === cat.key);
     const role = ranked.length > 1 && c.key === weakest.key && weakestIsNotable ? 'weakest'
       : ranked.length > 1 && c.key === strongest.key && strongestIsNotable ? 'strongest'
       : 'middle';
     const band3 = bandFor(c.score) === 'exceptional' || bandFor(c.score) === 'strong' ? 'strong'
       : bandFor(c.score) === 'weak' || bandFor(c.score) === 'struggling' ? 'weak'
-      : 'developing'; // collapsed to the three bands the UI already colours (green/orange/red)
-    // The owner can write a low-score message and a high-score message per
-    // category (matching ScoreApp's model exactly) — used when it applies,
-    // otherwise this category's commentary is generated.
+      : 'developing';
     const ownerMessage = band3 === 'weak' ? c.lowMessage : band3 === 'strong' ? c.highMessage : null;
     const message = (ownerMessage && ownerMessage.trim()) || categoryMessage(c.label, c.score, role, `${seedBase}:${c.key}`);
-    return { key: c.key, label: c.label, score: c.score, band: band3, message };
+    const ownerHeadline = c.headline && c.headline.trim();
+    const headline = ownerHeadline || categoryHeadline(c.label, band3, `${seedBase}:${c.key}`);
+    const checklist = categoryChecklist(band3, `${seedBase}:${c.key}`);
+    return { key: c.key, label: c.label, score: c.score, band: band3, headline, message, checklist };
   });
 
   const answerInsights = questions.map((q, i) => {

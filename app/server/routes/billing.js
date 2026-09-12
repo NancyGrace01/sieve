@@ -140,10 +140,21 @@ router.get('/wallet', requireAuth, async (req, res) => {
     'SELECT plan, billing_mode, credit_balance, cpl_rate_kobo, paystack_authorization_code FROM users WHERE id = ?',
     [req.user.id]
   );
+  // Every bundle purchase is already logged in credit_purchases (added when
+  // credits were introduced) — it just wasn't surfaced anywhere yet. Lifetime
+  // purchased minus the current balance gives an honest "used so far" without
+  // a new column or migration.
+  const { total } = await get(
+    'SELECT COALESCE(SUM(credits_added), 0) as total FROM credit_purchases WHERE user_id = ?',
+    [req.user.id]
+  );
+  const creditsPurchasedTotal = Number(total);
   res.json({
     plan: user.plan,
     billingMode: user.billing_mode,
     creditBalance: user.credit_balance,
+    creditsPurchasedTotal,
+    creditsUsed: Math.max(0, creditsPurchasedTotal - user.credit_balance),
     cplRateKobo: user.cpl_rate_kobo || CPL_DEFAULT_RATE_KOBO,
     hasCardOnFile: !!user.paystack_authorization_code,
   });

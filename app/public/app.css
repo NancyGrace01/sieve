@@ -197,3 +197,4 @@ table.leads th { background: var(--surface-sunk); font-family: var(--font-displa
   0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
   50% { box-shadow: 0 0 0 6px var(--accent-soft); }
 }
+.cover-upload-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
