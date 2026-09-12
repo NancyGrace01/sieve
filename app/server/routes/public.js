@@ -38,7 +38,16 @@ async function billingGate(scorecardRow) {
   );
   if (!owner) return null;
 
-  if (owner.plan === 'free') {
+  // Same "genuinely never paid" definition used for the scorecard-count cap in
+  // routes/scorecards.js — a Credits top-up or an activated Pay-per-lead card
+  // means this account is past the free tier's 10-response ceiling too, even
+  // though `plan` itself only changes on a subscription upgrade.
+  const stillOnFreePlan = owner.plan === 'free'
+    && owner.billing_mode === 'subscription'
+    && Number(owner.credit_balance) <= 0
+    && !owner.paystack_authorization_code;
+
+  if (stillOnFreePlan) {
     const { count } = await get('SELECT COUNT(*) as count FROM leads WHERE scorecard_id = ?', [scorecardRow.id]);
     if (Number(count) >= FREE_PLAN_RESPONSE_LIMIT) {
       return `This scorecard has reached its free-plan limit of ${FREE_PLAN_RESPONSE_LIMIT} responses — the owner needs to upgrade to keep collecting leads.`;

@@ -70,9 +70,24 @@ router.get('/meta/demographics', (req, res) => {
 router.post('/', async (req, res, next) => {
   try {
     if (req.user.plan === 'free') {
-      const { count } = await get('SELECT COUNT(*) as count FROM scorecards WHERE user_id = ?', [req.user.id]);
-      if (Number(count) >= 1) {
-        return res.status(402).json({ error: 'Your free plan allows 1 scorecard. Upgrade to create more.' });
+      // `plan` only changes on a subscription upgrade — a Credits top-up or an
+      // activated Pay-per-lead card is just as much "already paying" and
+      // should also lift this cap, so check those directly rather than
+      // trusting `plan` alone (queried fresh here, not on req.user, since
+      // /auth/me returns req.user as-is and this account's saved-card
+      // authorization code shouldn't ever reach the browser).
+      const billing = await get(
+        'SELECT billing_mode, credit_balance, paystack_authorization_code FROM users WHERE id = ?',
+        [req.user.id]
+      );
+      const stillOnFreePlan = billing.billing_mode === 'subscription'
+        && Number(billing.credit_balance) <= 0
+        && !billing.paystack_authorization_code;
+      if (stillOnFreePlan) {
+        const { count } = await get('SELECT COUNT(*) as count FROM scorecards WHERE user_id = ?', [req.user.id]);
+        if (Number(count) >= 1) {
+          return res.status(402).json({ error: 'Your free plan allows 1 scorecard. Upgrade to create more.' });
+        }
       }
     }
     const title = (req.body && req.body.title) || 'Untitled scorecard';
