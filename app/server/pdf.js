@@ -79,17 +79,17 @@ function buildReportPdf(personalization, businessName) {
     });
 
   // Answer-level insights, weakest categories already surfaced first upstream
-  if (personalization.answerInsights.length) {
-    doc.moveDown(0.3);
-    doc.fillColor(INK).font('Helvetica-Bold').fontSize(13).text('What we noticed in your answers');
-    doc.moveDown(0.5);
-    personalization.answerInsights.forEach(a => {
-      doc.fillColor(INK).font('Helvetica-Bold').fontSize(10.5).text(`${a.question}`, { width: pageWidth });
-      doc.fillColor(INK_SOFT).font('Helvetica-Oblique').fontSize(10).text(`Your answer: ${a.answer}`, { width: pageWidth });
-      doc.fillColor(INK_SOFT).font('Helvetica').fontSize(10.5).text(a.insight, { width: pageWidth, lineGap: 2 });
-      doc.moveDown(0.7);
-    });
-  }
+  // if (personalization.answerInsights.length) {
+  //   doc.moveDown(0.3);
+  //   doc.fillColor(INK).font('Helvetica-Bold').fontSize(13).text('What we noticed in your answers');
+  //   doc.moveDown(0.5);
+  //   personalization.answerInsights.forEach(a => {
+  //     doc.fillColor(INK).font('Helvetica-Bold').fontSize(10.5).text(`${a.question}`, { width: pageWidth });
+  //     doc.fillColor(INK_SOFT).font('Helvetica-Oblique').fontSize(10).text(`Your answer: ${a.answer}`, { width: pageWidth });
+  //     doc.fillColor(INK_SOFT).font('Helvetica').fontSize(10.5).text(a.insight, { width: pageWidth, lineGap: 2 });
+  //     doc.moveDown(0.7);
+  //   });
+  // }
 
   // Recommendation / CTA — same headline, body, and button label as the
   // on-screen result and the email, per personalize.js's shared output.

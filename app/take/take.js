@@ -373,8 +373,8 @@
       <button class="result-tab${i === 0 ? ' active' : ''}" data-cat-tab="${c.key}">${escapeHtml(c.label)}</button>
     `).join('');
 
-    const catPanels = p.categoryNarratives.map((c, i) => `
-      <div class="result-cat-panel${i === 0 ? ' active' : ''}" data-cat-panel="${c.key}">
+    const catPanels = p.categoryNarratives.map((c) => `
+      <div class="result-cat-panel" data-cat-panel="${c.key}">
         <div class="result-cat-card">
           <div class="result-cat-card-top">
             <div class="result-cat-icon" style="color:${BAND_COLOR[c.band] || 'var(--accent)'}">${categoryIconSvg(c.label)}</div>
@@ -395,18 +395,18 @@
       <div class="result-tab-panels">${catPanels}</div>
     ` : '';
 
-    const insightsBlock = p.answerInsights.length ? `
-      <div class="result-insights">
-        <h3>What we noticed in your answers</h3>
-        ${p.answerInsights.map(a => `
-          <div class="result-insight">
-            <p class="result-insight-q">${escapeHtml(a.question)}</p>
-            <p class="result-insight-a">Your answer: ${escapeHtml(a.answer)}</p>
-            <p class="result-insight-text">${escapeHtml(a.insight)}</p>
-          </div>
-        `).join('')}
-      </div>
-    ` : '';
+    // const insightsBlock = p.answerInsights.length ? `
+    //   <div class="result-insights">
+    //     <h3>What we noticed in your answers</h3>
+    //     ${p.answerInsights.map(a => `
+    //       <div class="result-insight">
+    //         <p class="result-insight-q">${escapeHtml(a.question)}</p>
+    //         <p class="result-insight-a">Your answer: ${escapeHtml(a.answer)}</p>
+    //         <p class="result-insight-text">${escapeHtml(a.insight)}</p>
+    //       </div>
+    //     `).join('')}
+    //   </div>
+    // ` : '';
 
     const ctaBlock = p.recommendation ? `
       <div class="result-cta">
@@ -458,7 +458,6 @@
         ${p.tierMessage ? `<p class="result-tier-message">${escapeHtml(p.tierMessage)}</p>` : ''}
         ${engagementBlock}
         ${categoryDeepDive}
-        ${insightsBlock}
         ${ctaBlock}
         ${resultFooter}
       </div>
@@ -470,7 +469,8 @@
       tab.addEventListener('click', () => {
         const key = tab.dataset.catTab;
         root.querySelectorAll('[data-cat-tab]').forEach(t => t.classList.toggle('active', t === tab));
-        root.querySelectorAll('[data-cat-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.catPanel === key));
+        const panel = Array.from(root.querySelectorAll('[data-cat-panel]')).find(p => p.dataset.catPanel === key);
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
 
