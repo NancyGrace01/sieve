@@ -101,6 +101,20 @@ function newLeadEmail(ownerEmail, scorecardTitle, lead) {
   });
 }
 
+// Sent once — the moment an owner's response-credit balance actually hits
+// zero — not on every later visit while it stays at zero (see the
+// credit_exhausted_notified_at guard in routes/public.js). Clears and can
+// fire again the next time the balance runs out after a top-up.
+function creditsExhaustedEmail(ownerEmail, businessName) {
+  return sendEmail({
+    to: ownerEmail,
+    subject: `${businessName || 'Your'} Sieve response credits have run out`,
+    html: `<p>Your response credit balance just hit <strong>0</strong>.</p>
+           <p>Your scorecards are still live and their links still work, but new visitors won't be able to submit a response — or get a result — until you top up.</p>
+           <p><a href="${appUrl()}/billing.html">Top up your credits</a> to start collecting leads again.</p>`,
+  });
+}
+
 const BAND_COLOR = { strong: '#16825D', developing: '#B3720C', weak: '#B3261E' };
 
 // The email a LEAD receives about their own result — built entirely from the
@@ -160,4 +174,4 @@ function leadResultsEmail({ to, businessName, personalization, reportUrl, pdfBuf
   });
 }
 
-module.exports = { sendEmail, passwordResetEmail, teamInviteEmail, newLeadEmail, leadResultsEmail, appUrl, escapeHtml, safeHref };
+module.exports = { sendEmail, passwordResetEmail, teamInviteEmail, newLeadEmail, leadResultsEmail, creditsExhaustedEmail, appUrl, escapeHtml, safeHref };

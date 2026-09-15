@@ -6,7 +6,10 @@ if (!JWT_SECRET) {
 }
 
 const COOKIE_NAME = 'sieve_session';
-const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+// 24 hours, and slid forward on every authenticated request (see
+// requireAuth.js) — an active user is never logged out mid-session, but 24
+// hours with no activity at all signs them out and they have to log back in.
+const COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 // `secure` must be true once this runs behind real HTTPS (any real deployment)
 // so the session cookie is never sent over plain HTTP — but forcing it true
@@ -27,7 +30,7 @@ function cookieOptions() {
 // resolves req.user from session.sub keeps working unchanged either way.
 // `memberId` is null for the owner, or the team_members.id for a teammate.
 function signSession(accountId, memberId = null) {
-  return jwt.sign({ sub: accountId, memberId }, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ sub: accountId, memberId }, JWT_SECRET, { expiresIn: '24h' });
 }
 
 function setSessionCookie(res, accountId, memberId = null) {

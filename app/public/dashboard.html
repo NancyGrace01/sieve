@@ -22,6 +22,8 @@
       </div>
     </div>
     <main class="app-main">
+      <div id="billing-alert"></div>
+      <div id="usage-summary"></div>
       <div class="page-head">
         <h1>Your scorecards</h1>
         <button class="btn btn-accent" id="new-btn">+ New scorecard</button>
@@ -115,6 +117,45 @@
         });
       }
 
+      function fmtNaira(kobo) { return '₦' + (kobo / 100).toLocaleString('en-NG'); }
+
+      // Same check the server runs before showing a scorecard to a visitor
+      // (billingGate in routes/public.js) — surfaced here so an owner sees
+      // *why* leads have stopped coming in without having to guess. Also
+      // renders a low-key, always-visible usage line — not a warning, just
+      // "where you stand" — from the same wallet fetch.
+      async function renderBillingStatus() {
+        try {
+          const wallet = await api('/billing/wallet');
+          const alertEl = document.getElementById('billing-alert');
+          if (wallet.billingMode === 'credits' && wallet.creditBalance <= 0) {
+            alertEl.innerHTML = `<div class="billing-alert"><span><strong>You're out of response credits.</strong> Your scorecard links still work, but visitors can't submit a response or get a result until you top up.</span><a class="btn btn-accent btn-sm" href="/billing.html">Top up now</a></div>`;
+          } else if (wallet.billingMode === 'cpl' && wallet.cplChargeFailing) {
+            alertEl.innerHTML = `<div class="billing-alert"><span><strong>We couldn't charge your card for a recent lead.</strong> Your scorecards can't collect leads again until you replace your card.</span><a class="btn btn-accent btn-sm" href="/billing.html">Replace card</a></div>`;
+          } else if (wallet.billingMode === 'cpl' && !wallet.hasCardOnFile) {
+            alertEl.innerHTML = `<div class="billing-alert"><span><strong>No card on file for pay-per-lead.</strong> Your scorecards can't collect leads until you save a card.</span><a class="btn btn-accent btn-sm" href="/billing.html">Save a card</a></div>`;
+          } else {
+            alertEl.innerHTML = '';
+          }
+
+          const summaryEl = document.getElementById('usage-summary');
+          let summary;
+          if (wallet.billingMode === 'credits') {
+            summary = `${wallet.creditBalance} credit${wallet.creditBalance === 1 ? '' : 's'} left`;
+          } else if (wallet.billingMode === 'cpl') {
+            const cardNote = wallet.cplChargeFailing ? 'card failing' : wallet.hasCardOnFile ? 'card on file' : 'no card saved';
+            summary = `Pay-per-lead — ${fmtNaira(wallet.cplRateKobo)} per lead · ${cardNote}`;
+          } else if (!wallet.hasEverPaid) {
+            summary = 'Free plan — 1 scorecard limit';
+          } else {
+            summary = 'Subscription plan';
+          }
+          summaryEl.innerHTML = `<a href="/billing.html" class="usage-pill">${summary}</a>`;
+        } catch {
+          // Non-critical — a failed wallet fetch just means no banner/summary, never blocks the dashboard.
+        }
+      }
+
       async function createScorecard() {
         try {
           const { scorecard } = await api('/scorecards', { method: 'POST', body: { title: 'Untitled scorecard' } });
@@ -127,6 +168,7 @@
       document.getElementById('new-btn').addEventListener('click', createScorecard);
 
       load();
+      renderBillingStatus();
     })();
   </script>
 </body>

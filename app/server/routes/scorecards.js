@@ -109,27 +109,34 @@ router.get('/meta/demographics', (req, res) => {
 // Create a new, empty scorecard.
 router.post('/', async (req, res, next) => {
   try {
-    if (req.user.plan === 'free') {
-      // `plan` only changes on a subscription upgrade — a Credits top-up or an
-      // activated Pay-per-lead card is just as much "already paying" and
-      // should also lift this cap, so check those directly rather than
-      // trusting `plan` alone (queried fresh here, not on req.user, since
-      // /auth/me returns req.user as-is and this account's saved-card
-      // authorization code shouldn't ever reach the browser).
-      const billing = await get(
-        'SELECT billing_mode, credit_balance, paystack_authorization_code FROM users WHERE id = ?',
-        [req.user.id]
-      );
-      const stillOnFreePlan = billing.billing_mode === 'subscription'
-        && Number(billing.credit_balance) <= 0
-        && !billing.paystack_authorization_code;
-      if (stillOnFreePlan) {
-        const { count } = await get('SELECT COUNT(*) as count FROM scorecards WHERE user_id = ?', [req.user.id]);
-        if (Number(count) >= 1) {
-          return res.status(402).json({ error: 'Your free plan allows 1 scorecard. Upgrade to create more.' });
-        }
+    // Queried fresh rather than trusting req.user, since /auth/me returns
+    // req.user as-is and this account's saved-card authorization code
+    // shouldn't ever reach the browser.
+    const billing = await get(
+      'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (!billing.has_ever_paid) {
+      // Free-trial allowance: 1 scorecard, until this account's first
+      // subscription payment, credit top-up, or CPL card save. has_ever_paid
+      // is one-way (see billing.js) — once it flips true this branch never
+      // runs for this account again, so there's no way back into the free
+      // tier after paying, even if a balance later drains to 0.
+      const { count } = await get('SELECT COUNT(*) as count FROM scorecards WHERE user_id = ?', [req.user.id]);
+      if (Number(count) >= 1) {
+        return res.status(402).json({ error: 'Your free plan allows 1 scorecard. Upgrade to create more.' });
       }
+    } else if (billing.billing_mode === 'credits' && Number(billing.credit_balance) <= 0) {
+      // Same exhausted-account condition billingGate (routes/public.js)
+      // blocks responses on — an account that's run out shouldn't be able to
+      // keep creating new scorecards either, only to find they can't collect
+      // anything on them.
+      return res.status(402).json({ error: "You're out of response credits — top up to create more scorecards." });
+    } else if (billing.billing_mode === 'cpl' && (!billing.paystack_authorization_code || billing.cpl_charge_failing)) {
+      return res.status(402).json({ error: 'Your pay-per-lead card needs attention before you can create more scorecards — check Billing.' });
     }
+
     const title = (req.body && req.body.title) || 'Untitled scorecard';
     const id = crypto.randomUUID();
     const slug = await uniqueSlug(slugify(title));

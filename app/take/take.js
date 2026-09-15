@@ -432,6 +432,7 @@
       score: p.overall, title: scorecard.title, brand: brandName, tier: p.tierLabel, link: shareLink,
     });
     const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    const whatsappIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.45 1.32 4.94L2 22l5.2-1.29A9.96 9.96 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2Zm0 18a7.96 7.96 0 0 1-4.06-1.11l-.29-.17-3.09.77.83-2.99-.19-.31A7.96 7.96 0 1 1 12 20Zm4.38-5.96c-.24-.12-1.41-.7-1.63-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.17-.7-.62-1.18-1.39-1.31-1.63-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.31-.02-.43-.06-.12-.54-1.31-.74-1.79-.2-.47-.4-.4-.54-.41h-.47c-.16 0-.42.06-.64.31-.22.24-.85.83-.85 2.04 0 1.21.87 2.37 1 2.53.12.16 1.71 2.62 4.15 3.67.58.25 1.03.4 1.38.51.58.19 1.1.16 1.52.1.46-.07 1.41-.58 1.61-1.13.2-.56.2-1.03.14-1.13-.06-.1-.22-.16-.46-.28Z"/></svg>`;
 
     // Preview submissions never create a lead, so there's no reportUrl and
     // nothing was emailed — say that plainly instead of the real closing
@@ -439,14 +440,14 @@
     const resultFooter = result.preview
       ? `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">This was a preview — no lead was recorded, and no email or PDF was sent.</p>
          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
-           <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
+          <a class="btn btn-whatsapp btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">${whatsappIcon}Send this to WhatsApp</a>
          </div>`
       : `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">
            ${lead.email ? `Your full personalised report has also been emailed to ${escapeHtml(lead.email)}.` : 'Thanks — your results have been recorded.'}
          </p>
          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
            <a class="btn btn-ghost btn-sm" href="${result.reportUrl}" target="_blank" rel="noopener">Download your PDF report ↓</a>
-           <a class="btn btn-accent btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">Send this to WhatsApp</a>
+           <a class="btn btn-whatsapp btn-sm" href="${whatsappHref}" target="_blank" rel="noopener">${whatsappIcon}Send this to WhatsApp</a>
          </div>`;
 
     root.innerHTML = `

@@ -21,6 +21,7 @@
     <main class="app-main" style="max-width:720px;">
       <div class="page-head"><h1>Billing</h1></div>
       <p id="config-warning" class="form-error" style="display:none;"></p>
+      <div id="billing-alert"></div>
 
       <div id="wallet-card" class="wallet-card"></div>
 
@@ -69,6 +70,23 @@
           <div><span class="wallet-num">${wallet.hasCardOnFile ? 'Yes' : 'No'}</span><span class="wallet-label">card on file</span></div>
         </div>
       `;
+
+      // Same check the server runs before showing a scorecard to a visitor
+      // (billingGate in routes/public.js) — surfaced here, before Paystack,
+      // so an owner sees this before they even pick what to pay for.
+      const alertEl = document.getElementById('billing-alert');
+      if (wallet.billingMode === 'credits' && wallet.creditBalance <= 0) {
+        alertEl.innerHTML = `<div class="billing-alert"><span><strong>You're out of response credits.</strong> Your scorecard links still work, but visitors can't submit a response or get a result until you top up.</span><button type="button" class="btn btn-accent btn-sm" data-jump-tab="credits">Top up now</button></div>`;
+      } else if (wallet.billingMode === 'cpl' && wallet.cplChargeFailing) {
+        alertEl.innerHTML = `<div class="billing-alert"><span><strong>We couldn't charge your card for a recent lead.</strong> Your scorecards can't collect leads again until you replace your card.</span><button type="button" class="btn btn-accent btn-sm" data-jump-tab="cpl">Replace card</button></div>`;
+      } else if (wallet.billingMode === 'cpl' && !wallet.hasCardOnFile) {
+        alertEl.innerHTML = `<div class="billing-alert"><span><strong>No card on file for pay-per-lead.</strong> Your scorecards can't collect leads until you save a card.</span><button type="button" class="btn btn-accent btn-sm" data-jump-tab="cpl">Save a card</button></div>`;
+      } else {
+        alertEl.innerHTML = '';
+      }
+      const jumpBtn = alertEl.querySelector('[data-jump-tab]');
+      if (jumpBtn) jumpBtn.addEventListener('click', () => document.querySelector(`.bill-tab[data-tab="${jumpBtn.dataset.jumpTab}"]`).click());
+
       return wallet;
     }
 
@@ -140,16 +158,19 @@
     async function renderCpl() {
       const [{ rateKobo }, wallet] = await Promise.all([api('/billing/cpl-rate'), api('/billing/wallet')]);
       const el = document.getElementById('cpl-box');
+            const cardStatus = wallet.cplChargeFailing
+        ? '⚠️ Your last charge failed — replace your card to start collecting leads again.'
+        : wallet.hasCardOnFile ? 'A card is already saved.' : 'No card saved yet — verify one to activate.';
       el.innerHTML = `
         <div class="plan-mini">
           <div>
             <strong>${fmtNaira(rateKobo)} per qualified lead</strong>
-            <div style="font-size:12.5px;color:var(--ink-faint);">${wallet.hasCardOnFile ? 'A card is already saved.' : 'No card saved yet — verify one to activate.'}</div>
+            <div style="font-size:12.5px;${wallet.cplChargeFailing ? 'color:#B3261E;font-weight:700;' : 'color:var(--ink-faint);'}">${cardStatus}</div>
           </div>
           <button class="btn btn-accent btn-sm" id="save-card-btn" ${!paystackPublicKey ? 'disabled' : ''}>${wallet.hasCardOnFile ? 'Replace card' : 'Save a card'}</button>
         </div>
         ${wallet.hasCardOnFile && wallet.billingMode !== 'cpl' ? `<button class="btn btn-ghost btn-sm" id="use-cpl-mode" style="margin-top:6px;">Switch active billing to Pay-per-lead</button>` : ''}
-        ${wallet.billingMode === 'cpl' ? '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Pay-per-lead is your active billing mode.</p>' : ''}
+        ${wallet.billingMode === 'cpl' && !wallet.cplChargeFailing ? '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Pay-per-lead is your active billing mode.</p>' : ''}
       `;
       document.getElementById('save-card-btn').addEventListener('click', () => {
         payWithPaystack({

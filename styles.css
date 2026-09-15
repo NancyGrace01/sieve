@@ -90,6 +90,9 @@ section { position: relative; }
 .btn-ghost:hover { border-color: var(--ink); }
 .btn-sm { padding: 10px 18px; font-size: 14px; }
 .btn-block { width: 100%; }
+.btn-whatsapp { background: #25D366; color: #fff; }
+.btn-whatsapp:hover { background: #1EBE5A; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-whatsapp svg { flex-shrink: 0; }
 
 /* ---------- Header ---------- */
 .site-header {
@@ -114,6 +117,17 @@ section { position: relative; }
 .nav-cta { display: flex; align-items: center; gap: 18px; }
 .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 6px; }
 .nav-toggle span { display: block; width: 22px; height: 2px; background: var(--ink); margin: 5px 0; border-radius: 2px; }
+
+/* Logged-in returning-visitor strip on the homepage — inserted by JS right
+   after .site-header, only once /api/auth/me confirms a session. */
+.welcome-banner { background: var(--ink); color: var(--paper); }
+.welcome-banner-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding-top: 12px; padding-bottom: 12px; font-size: 13.5px;
+}
+.welcome-banner-inner a { color: var(--accent); font-weight: 700; }
+.welcome-banner-inner .btn-ghost { border-color: rgba(251,249,245,0.35); color: var(--paper); padding: 8px 16px; }
+.welcome-banner-inner .btn-ghost:hover { border-color: var(--paper); }
 
 /* ---------- Hero ---------- */
 .hero { padding: 96px 0 60px; text-align: center; }

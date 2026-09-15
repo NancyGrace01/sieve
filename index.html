@@ -325,24 +325,47 @@
 
 <script src="script.js"></script>
 <script>
+  function escapeHomeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   fetch('/api/auth/me', { credentials: 'include' })
     .then(res => {
-      if (!res.ok) return; 
+      if (!res.ok) return;
+      return res.json().then(({ user }) => {
+        const loginLink = document.getElementById('nav-login');
+        if (loginLink) {
+          loginLink.textContent = 'Dashboard';
+          loginLink.href = '/dashboard.html';
+          loginLink.classList.remove('btn-ghost');
+          loginLink.classList.add('btn-accent');
+        }
 
-      const loginLink = document.getElementById('nav-login');
-      if (loginLink) {
-        loginLink.textContent = 'Dashboard';
-        loginLink.href = '/dashboard.html';
-      }
+        const navCta = document.getElementById('nav-cta');
+        if (navCta) navCta.style.display = 'none';
 
-      const navCta = document.getElementById('nav-cta');
-      if (navCta) navCta.style.display = 'none'; 
+        const heroCta = document.getElementById('hero-cta');
+        if (heroCta) {
+          heroCta.textContent = 'Go to dashboard';
+          heroCta.href = '/dashboard.html';
+        }
 
-      const heroCta = document.getElementById('hero-cta');
-      if (heroCta) {
-        heroCta.textContent = 'Go to dashboard';
-        heroCta.href = '/dashboard.html';
-      }
+        // Visual direction for a returning, logged-in visitor — who they are
+        // and what to do next — plus a way to log out right from the homepage.
+        const banner = document.createElement('div');
+        banner.className = 'welcome-banner';
+        banner.innerHTML = `
+          <div class="container welcome-banner-inner">
+            <span>Welcome back, <strong>${escapeHomeHtml(user.business_name)}</strong> — click <a href="/dashboard.html">Dashboard</a> to create scorecards or check your leads and performance.</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="home-logout-btn">Log out</button>
+          </div>
+        `;
+        document.querySelector('.site-header').after(banner);
+        document.getElementById('home-logout-btn').addEventListener('click', async () => {
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+          window.location.reload();
+        });
+      });
     })
     .catch(() => {});
 </script>

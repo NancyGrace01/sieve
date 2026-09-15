@@ -76,6 +76,9 @@ async function migrate() {
       cpl_rate_kobo INTEGER,
       paystack_authorization_code TEXT,
       paystack_customer_code TEXT,
+      credit_exhausted_notified_at TIMESTAMPTZ,
+      has_ever_paid BOOLEAN NOT NULL DEFAULT false,
+      cpl_charge_failing BOOLEAN NOT NULL DEFAULT false,
       created_at TEXT NOT NULL DEFAULT (now()::text)
     );
 
@@ -201,6 +204,9 @@ async function migrate() {
     ['cpl_rate_kobo', 'INTEGER'],
     ['paystack_authorization_code', 'TEXT'],
     ['paystack_customer_code', 'TEXT'],
+    ['credit_exhausted_notified_at', 'TIMESTAMPTZ'],
+    ['has_ever_paid', 'BOOLEAN NOT NULL DEFAULT false'],
+    ['cpl_charge_failing', 'BOOLEAN NOT NULL DEFAULT false'],
   ];
   for (const [name, def] of newUserColumns) {
     if (!userColumns.has(name)) {

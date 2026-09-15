@@ -1,4 +1,4 @@
-const { readSession } = require('../auth');
+const { readSession, setSessionCookie } = require('../auth');
 const { get } = require('../db');
 
 async function requireAuth(req, res, next) {
@@ -17,6 +17,11 @@ async function requireAuth(req, res, next) {
       if (!member || !member.active) return res.status(401).json({ error: 'Not signed in.' });
       req.member = member;
     }
+
+    // Sliding 24-hour session: every authenticated request re-issues the
+    // cookie with a fresh 24h expiry, so someone actively using the app never
+    // gets logged out mid-session — only 24 hours of no activity signs them out.
+    setSessionCookie(res, session.sub, session.memberId);
 
     next();
   } catch (err) {

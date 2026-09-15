@@ -225,14 +225,35 @@ const TIER_MESSAGE_SINGLE = {
   struggling: [l => `${l} is significantly behind — and since it's the whole picture here, it's the clear place to start.`, l => `This result comes down entirely to ${l.toLowerCase()}, which needs the most attention right now.`],
 };
 
-function tierMessage(overall, strongestLabel, weakestLabel, seed) {
+// A short, concrete suggestion sentence appended to the multi-category tier
+// message, always naming the weakest category — this is what turns the
+// top-level summary from "here's what's going on" into "...and here's what
+// to do about it." Only appended when the weakest category is a genuinely
+// notable gap (see `weakestIsNotable` below) — a category that's merely the
+// lowest of an otherwise uniformly strong result doesn't deserve a "fix
+// this" suggestion. Never used in the single-category branch, since that
+// branch is already entirely about the one category.
+const TIER_SUGGESTION = [
+  w => `The clearest next step: put focused, deliberate attention on ${w.toLowerCase()} before anything else.`,
+  w => `If there's one place to start, it's ${w.toLowerCase()} — closing even part of that gap would lift the whole result.`,
+  w => `The most useful next move here is a concrete plan for ${w.toLowerCase()} — everything else gets easier once that's addressed.`,
+  w => `Worth treating as the real priority: a specific, honest plan for improving ${w.toLowerCase()} would move the needle most.`,
+];
+
+function tierSuggestion(weakestLabel, seed) {
+  return pick(`${seed}:suggestion`, TIER_SUGGESTION)(weakestLabel);
+}
+
+function tierMessage(overall, strongestLabel, weakestLabel, weakestIsNotable, seed) {
   const band = bandFor(overall);
   if (strongestLabel === weakestLabel) {
     const fn = pick(`${seed}:message`, TIER_MESSAGE_SINGLE[band]);
     return fn(strongestLabel);
   }
   const fn = pick(`${seed}:message`, TIER_MESSAGE[band]);
-  return fn(strongestLabel, weakestLabel);
+  const base = fn(strongestLabel, weakestLabel);
+  if (!weakestIsNotable) return base;
+  return `${base} ${tierSuggestion(weakestLabel, `${seed}:suggestion`)}`;
 }
 
 // --- Per-answer insight, driven by how the chosen option ranks among the
@@ -263,11 +284,7 @@ const ANSWER_INSIGHT = {
 };
 
 // --- The recommendation block's own headline — addressed to the respondent
-// by name, matching the reference behaviour: a plain "Recommended next step"
-// label reads like a form footer, a question with their own name in it reads
-// like an invitation. Still only ever shown alongside an owner-written
-// recommendation (see buildPersonalizedResult) — nothing here invents the
-// booking page or WhatsApp number behind it. -----------------------------
+// by name, matching the reference behaviour
 
 const CTA_HEADLINE = [
   n => `Would you like to gain deeper insights on your results, ${n}?`,
@@ -276,7 +293,23 @@ const CTA_HEADLINE = [
   n => `${n}, want a second pair of eyes on what this result actually means for you?`,
 ];
 
-function ctaHeadline(firstName, seed) {
+// Used instead of the generic CTA_HEADLINE above whenever there's a clear,
+// notable weak category to name — ties the "Book Now" invitation directly
+// to it, so the recommendation paragraph and the CTA button beneath it read
+// as one connected thought (e.g. weakest category "Design" -> "Want to talk
+// to a design expert?") rather than two unrelated blocks.
+const CTA_HEADLINE_CATEGORY = [
+  (n, w) => `Want to talk to a ${w.toLowerCase()} expert, ${n}?`,
+  (n, w) => `${n}, ready to get real help with ${w.toLowerCase()}?`,
+  (n, w) => `Want a second pair of eyes on ${w.toLowerCase()}, ${n}?`,
+  (n, w) => `Ready to turn ${w.toLowerCase()} into a real next step, ${n}?`,
+];
+
+function ctaHeadline(firstName, weakestLabel, tieToCategory, seed) {
+  if (tieToCategory && weakestLabel) {
+    const fn = pick(`${seed}:ctaHeadlineCat`, CTA_HEADLINE_CATEGORY);
+    return fn(firstName, weakestLabel);
+  }
   const fn = pick(`${seed}:ctaHeadline`, CTA_HEADLINE);
   return fn(firstName);
 }
@@ -368,13 +401,19 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
     overall,
     tierLabel,
     tierHeadline: ownerHeadline || tierHeadline(overall, `${seedBase}:tier`),
-    tierMessage: ownerMessage || tierMessage(overall, strongest.label, weakest.label, `${seedBase}:tier`),
+    tierMessage: ownerMessage || tierMessage(overall, strongest.label, weakest.label, weakestIsNotable, `${seedBase}:tier`),
     recommendation,
     recommendationUrl,
     recommendationLabel,
     // Only meaningful once there's an actual recommendation to sit next to —
     // take.js only renders the CTA block at all when `recommendation` is set.
-    ctaHeadline: recommendation ? ctaHeadline(firstName, `${seedBase}:cta`) : '',
+    // Tied to the weakest category's own label whenever that category is a
+    // genuinely notable gap (or it's the only category there is), so the
+    // recommendation and the "Book Now" CTA beneath it read as one
+    // connected thought instead of two unrelated blocks.
+    ctaHeadline: recommendation
+      ? ctaHeadline(firstName, weakest.label, weakest.label === strongest.label || weakestIsNotable, `${seedBase}:cta`)
+      : '',
     categoryNarratives,
     answerInsights,
   };

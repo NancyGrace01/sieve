@@ -1,5 +1,15 @@
 /* Sieve App — dashboard, builder, leads. Extends the marketing site's styles.css. */
 
+/* Warns an owner their scorecards have stopped collecting leads (out of
+   credits, or pay-per-lead with no card on file) — used on both
+   dashboard.html and billing.html. */
+.billing-alert {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  background: var(--badsoft, #FBE7E5); border: 1.5px solid #F0B4AC; color: #7A1F17;
+  border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px; font-size: 13.5px; line-height: 1.5;
+}
+.billing-alert strong { color: #5C1611; }
+
 .dash-stats { margin-bottom: 28px; }
 .sc-card {
   transition: box-shadow .15s ease, transform .15s ease;
@@ -198,3 +208,13 @@ table.leads th { background: var(--surface-sunk); font-family: var(--font-displa
   50% { box-shadow: 0 0 0 6px var(--accent-soft); }
 }
 .cover-upload-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Compact, always-visible "where you stand" line on the dashboard — links to
+   Billing, sits above the billing-alert warning (which only shows when
+   blocked) so usage is visible whether or not anything's currently wrong. */
+#usage-summary { margin-bottom: 14px; }
+.usage-pill {
+  display: inline-block; font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+  background: var(--surface-sunk); border-radius: 999px; padding: 6px 14px;
+}
+.usage-pill:hover { color: var(--ink); }

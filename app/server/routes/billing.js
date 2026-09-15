@@ -40,7 +40,7 @@ router.post('/verify', requireAuth, async (req, res) => {
     if (data.data.amount !== PLAN_PRICES_KOBO[plan]) {
       return res.status(402).json({ error: 'Amount paid does not match the selected plan.' });
     }
-    await run('UPDATE users SET plan = ? WHERE id = ?', [plan, req.user.id]);
+    await run('UPDATE users SET plan = ?, has_ever_paid = true WHERE id = ?', [plan, req.user.id]);
     res.json({ ok: true, plan });
   } catch (err) {
     res.status(502).json({ error: 'Could not reach Paystack to verify this payment. Try again.' });
@@ -74,7 +74,7 @@ router.post('/credits/verify', requireAuth, async (req, res) => {
     if (data.data.amount !== bundle.amountKobo) {
       return res.status(402).json({ error: 'Amount paid does not match the selected bundle.' });
     }
-    await run('UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?', [bundle.credits, req.user.id]);
+    await run('UPDATE users SET credit_balance = credit_balance + ?, credit_exhausted_notified_at = NULL, has_ever_paid = true WHERE id = ?', [bundle.credits, req.user.id]);
     await run(
       'INSERT INTO credit_purchases (id, user_id, amount_kobo, credits_added, paystack_reference) VALUES (?, ?, ?, ?, ?)',
       [crypto.randomUUID(), req.user.id, bundle.amountKobo, bundle.credits, reference]
@@ -90,8 +90,8 @@ router.post('/credits/verify', requireAuth, async (req, res) => {
 // once via a ₦100 verification charge, then each qualified lead is billed
 // individually in real time as it comes in. ---
 
-const CPL_DEFAULT_RATE_KOBO = 15000; // ₦150 per qualified lead
-const CARD_VERIFY_AMOUNT_KOBO = 10000; // ₦100 — refundable-in-spirit, just proves the card works
+const CPL_DEFAULT_RATE_KOBO = 20000; // ₦200 per qualified lead
+const CARD_VERIFY_AMOUNT_KOBO = 10000;
 
 router.get('/cpl-rate', (req, res) => {
   res.json({ rateKobo: CPL_DEFAULT_RATE_KOBO });
@@ -110,7 +110,7 @@ router.post('/cpl/save-card', requireAuth, async (req, res) => {
       return res.status(502).json({ error: 'Paystack did not return a reusable card authorization. Try a different card.' });
     }
     await run(
-      'UPDATE users SET paystack_authorization_code = ?, cpl_rate_kobo = ? WHERE id = ?',
+      'UPDATE users SET paystack_authorization_code = ?, cpl_rate_kobo = ?, cpl_charge_failing = false, has_ever_paid = true WHERE id = ?',
       [authCode, CPL_DEFAULT_RATE_KOBO, req.user.id]
     );
     res.json({ ok: true, rateKobo: CPL_DEFAULT_RATE_KOBO });
@@ -127,23 +127,20 @@ router.post('/mode', requireAuth, async (req, res) => {
   if (!['subscription', 'credits', 'cpl'].includes(mode)) {
     return res.status(400).json({ error: 'Unknown billing mode.' });
   }
-  const user = await get('SELECT credit_balance, paystack_authorization_code FROM users WHERE id = ?', [req.user.id]);
+  const user = await get('SELECT credit_balance, paystack_authorization_code, cpl_charge_failing FROM users WHERE id = ?', [req.user.id]);
   if (mode === 'cpl' && !user.paystack_authorization_code) {
     return res.status(400).json({ error: 'Save a card for pay-per-lead billing before switching to it.' });
   }
-  await run('UPDATE users SET billing_mode = ? WHERE id = ?', [mode, req.user.id]);
-  res.json({ ok: true, billingMode: mode });
+  if (mode === 'cpl' && user.cpl_charge_failing) {
+    return res.status(400).json({ error: 'Your card on file is failing to charge — replace it before switching back to pay-per-lead.' });
+  }
 });
 
 router.get('/wallet', requireAuth, async (req, res) => {
   const user = await get(
-    'SELECT plan, billing_mode, credit_balance, cpl_rate_kobo, paystack_authorization_code FROM users WHERE id = ?',
+    'SELECT plan, billing_mode, credit_balance, cpl_rate_kobo, paystack_authorization_code, cpl_charge_failing, has_ever_paid FROM users WHERE id = ?',
     [req.user.id]
   );
-  // Every bundle purchase is already logged in credit_purchases (added when
-  // credits were introduced) — it just wasn't surfaced anywhere yet. Lifetime
-  // purchased minus the current balance gives an honest "used so far" without
-  // a new column or migration.
   const { total } = await get(
     'SELECT COALESCE(SUM(credits_added), 0) as total FROM credit_purchases WHERE user_id = ?',
     [req.user.id]
@@ -157,6 +154,8 @@ router.get('/wallet', requireAuth, async (req, res) => {
     creditsUsed: Math.max(0, creditsPurchasedTotal - user.credit_balance),
     cplRateKobo: user.cpl_rate_kobo || CPL_DEFAULT_RATE_KOBO,
     hasCardOnFile: !!user.paystack_authorization_code,
+    cplChargeFailing: !!user.cpl_charge_failing,
+    hasEverPaid: !!user.has_ever_paid,
   });
 });
 
@@ -165,10 +164,34 @@ module.exports.CREDIT_BUNDLES = CREDIT_BUNDLES;
 module.exports.CPL_DEFAULT_RATE_KOBO = CPL_DEFAULT_RATE_KOBO;
 module.exports.CARD_VERIFY_AMOUNT_KOBO = CARD_VERIFY_AMOUNT_KOBO;
 
+// Flags the account so billingGate (routes/public.js) and the
+// scorecard-creation cap (routes/scorecards.js) stop collecting further
+// leads, and emails the owner what happened and why. Awaited by both call
+// sites below (not fire-and-forget) so the block is reliably in place before
+// chargeCplLead returns. cpl/save-card is the only place that clears the flag
+// again, once the owner replaces their card.
+async function markCplChargeFailed(owner) {
+  try {
+    await run('UPDATE users SET cpl_charge_failing = true WHERE id = ?', [owner.id]);
+  } catch (err) {
+    console.error('[billing] setting cpl_charge_failing failed:', err);
+  }
+  sendEmail({
+    to: owner.email,
+    subject: 'Sieve — we could not charge your card for a new lead',
+    html: `<p>A new qualified lead came in, but charging your card on file for it didn't go through — this lead is still saved in your dashboard either way.</p>
+           <p><strong>Because of this, your scorecards have stopped accepting new responses</strong> until this is fixed — visitors won't be able to submit or get a result until you sort your card out.</p>
+           <p><a href="${appUrl()}/billing.html">Replace your card in Billing</a> to start collecting leads again.</p>`,
+  }).catch(err => console.error('[billing] CPL failure notice email failed:', err));
+}
+
 // Shared helper used by public.js right after a CPL-mode submission — fires
-// a real-time charge against the owner's saved card for one qualified lead,
-// logs the attempt either way, and emails the owner if it fails so they
-// notice a dead card quickly instead of silently losing billing coverage.
+// a real-time charge against the owner's saved card for one qualified lead
+// and logs the attempt either way. A failure blocks further leads until the
+// owner fixes their card — see markCplChargeFailed above. Because that block
+// takes effect immediately, in practice no *new* lead can reach this
+// function again after the first failure — the next attempt only happens
+// once cpl/save-card clears the flag.
 async function chargeCplLead({ owner, leadId }) {
   const id = crypto.randomUUID();
   try {
@@ -182,12 +205,14 @@ async function chargeCplLead({ owner, leadId }) {
       'INSERT INTO cpl_charges (id, user_id, lead_id, amount_kobo, status, paystack_reference) VALUES (?, ?, ?, ?, ?, ?)',
       [id, owner.id, leadId, owner.cpl_rate_kobo || CPL_DEFAULT_RATE_KOBO, success ? 'success' : 'failed', (data.data && data.data.reference) || null]
     );
-    if (!success) {
-      sendEmail({
-        to: owner.email,
-        subject: 'Sieve — a pay-per-lead charge failed',
-        html: `<p>A new qualified lead came in, but charging your card on file for it didn't go through. Update your card at <a href="${appUrl()}/billing.html">${appUrl()}/billing.html</a> so future leads keep billing correctly — this lead is still in your dashboard either way.</p>`,
-      }).catch(err => console.error('[billing] CPL failure notice email failed:', err));
+    if (success) {
+      // Defensive only — see the comment above for why a failure practically
+      // can't be followed by another attempt without cpl/save-card already
+      // having cleared this, but keeping it in sync here costs nothing.
+      run('UPDATE users SET cpl_charge_failing = false WHERE id = ?', [owner.id])
+        .catch(err => console.error('[billing] clearing cpl_charge_failing failed:', err));
+    } else {
+      await markCplChargeFailed(owner);
     }
     return success;
   } catch (err) {
@@ -195,6 +220,7 @@ async function chargeCplLead({ owner, leadId }) {
       'INSERT INTO cpl_charges (id, user_id, lead_id, amount_kobo, status) VALUES (?, ?, ?, ?, ?)',
       [id, owner.id, leadId, owner.cpl_rate_kobo || CPL_DEFAULT_RATE_KOBO, 'error']
     );
+    await markCplChargeFailed(owner);
     console.error('[billing] CPL charge threw:', err);
     return false;
   }

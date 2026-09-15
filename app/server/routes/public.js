@@ -5,7 +5,7 @@ const { computeScore } = require('../scoring');
 const { buildPersonalizedResult } = require('../personalize');
 const { buildReportPdf } = require('../pdf');
 const rateLimit = require('../middleware/rateLimit');
-const { newLeadEmail, leadResultsEmail, appUrl } = require('../mailer');
+const { newLeadEmail, leadResultsEmail, creditsExhaustedEmail, appUrl } = require('../mailer');
 const { AGE_RANGES, GENDERS, SOCIAL_CLASSES, LOCATIONS, parseProfileCapture } = require('../demographics');
 const { chargeCplLead } = require('./billing');
 
@@ -31,36 +31,36 @@ async function resolveBrandName(scorecardRow) {
 // Returns null when the scorecard is available, or a user-facing reason.
 const FREE_PLAN_RESPONSE_LIMIT = 10;
 
+// One brand-neutral message for every gated reason below — a random visitor
+// never needs (or should see) *why* a scorecard stopped accepting responses
+// (out of credits, no card on file, past the free-plan limit) — that's not a
+// professional thing to air to the public. The real reason still reaches the
+// owner: see the credits-exhausted email + dashboard/billing banner below.
+const GATED_MESSAGE = "This scorecard isn't accepting responses right now — please check back soon.";
+
 async function billingGate(scorecardRow) {
   const owner = await get(
-    'SELECT plan, billing_mode, credit_balance, paystack_authorization_code FROM users WHERE id = ?',
+    'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid FROM users WHERE id = ?',
     [scorecardRow.user_id]
   );
   if (!owner) return null;
 
-  // Same "genuinely never paid" definition used for the scorecard-count cap in
-  // routes/scorecards.js — a Credits top-up or an activated Pay-per-lead card
-  // means this account is past the free tier's 10-response ceiling too, even
-  // though `plan` itself only changes on a subscription upgrade.
-  const stillOnFreePlan = owner.plan === 'free'
-    && owner.billing_mode === 'subscription'
-    && Number(owner.credit_balance) <= 0
-    && !owner.paystack_authorization_code;
-
-  if (stillOnFreePlan) {
+  // has_ever_paid is a one-way flag (set the first time a subscription
+  // payment, a credit top-up, or a CPL card save succeeds — see billing.js —
+  // and never cleared again), so an account that has paid before can never
+  // fall back into the free-trial allowance again, no matter what its
+  // current billing_mode or balance is. This replaces an earlier version of
+  // this check that inferred "never paid" from current state, which broke
+  // the moment someone drained a credit balance back to 0.
+  if (!owner.has_ever_paid) {
     const { count } = await get('SELECT COUNT(*) as count FROM leads WHERE scorecard_id = ?', [scorecardRow.id]);
-    if (Number(count) >= FREE_PLAN_RESPONSE_LIMIT) {
-      return `This scorecard has reached its free-plan limit of ${FREE_PLAN_RESPONSE_LIMIT} responses — the owner needs to upgrade to keep collecting leads.`;
-    }
+    if (Number(count) >= FREE_PLAN_RESPONSE_LIMIT) return GATED_MESSAGE;
+    return null;
   }
 
   if (owner.billing_mode === 'subscription') return null;
-  if (owner.billing_mode === 'credits' && owner.credit_balance <= 0) {
-    return 'This scorecard is temporarily unavailable — the owner is out of response credits.';
-  }
-  if (owner.billing_mode === 'cpl' && !owner.paystack_authorization_code) {
-    return 'This scorecard is temporarily unavailable — the owner has not set up billing yet.';
-  }
+  if (owner.billing_mode === 'credits' && owner.credit_balance <= 0) return GATED_MESSAGE;
+  if (owner.billing_mode === 'cpl' && (!owner.paystack_authorization_code || owner.cpl_charge_failing)) return GATED_MESSAGE;
   return null;
 }
 
@@ -213,6 +213,23 @@ router.post('/scorecards/:slug/submit', submitLimiter, async (req, res, next) =>
     if (owner && owner.billing_mode === 'credits') {
       run('UPDATE users SET credit_balance = credit_balance - 1 WHERE id = ?', [owner.id])
         .catch(err => console.error('[public] credit deduction failed:', err));
+
+      // This response is the one that took the balance to zero (or below, if
+      // a race let two through at once) — tell the owner once. The flag flip
+      // is awaited (it's one fast, single-row UPDATE) so it's reliably in
+      // place before this request finishes; only the email itself — the part
+      // that can be slow or fail — stays fire-and-forget. The
+      // `credit_exhausted_notified_at IS NULL` guard is checked and set in
+      // the same UPDATE, so this only ever fires the first time; billing.js
+      // clears the flag again the next time they top up.
+      if (Number(owner.credit_balance) - 1 <= 0) {
+        try {
+          const { changes } = await run(`UPDATE users SET credit_exhausted_notified_at = now() WHERE id = ? AND credit_exhausted_notified_at IS NULL`, [owner.id]);
+          if (changes > 0) creditsExhaustedEmail(owner.email, brandName).catch(err => console.error('[public] credits-exhausted email failed:', err));
+        } catch (err) {
+          console.error('[public] credits-exhausted flag update failed:', err);
+        }
+      }
     } else if (owner && owner.billing_mode === 'cpl' && owner.paystack_authorization_code) {
       chargeCplLead({ owner, leadId: id }).catch(err => console.error('[public] CPL charge failed:', err));
     }
