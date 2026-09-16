@@ -142,16 +142,23 @@ router.post('/cpl/save-card', requireAuth, async (req, res) => {
 // default/secondary fallback; credits and cpl both require their own setup
 // step to have already happened (a positive balance, or a saved card).
 router.post('/mode', requireAuth, async (req, res) => {
-  const { mode } = req.body || {};
-  if (!['subscription', 'credits', 'cpl'].includes(mode)) {
-    return res.status(400).json({ error: 'Unknown billing mode.' });
-  }
-  const user = await get('SELECT credit_balance, paystack_authorization_code, cpl_charge_failing FROM users WHERE id = ?', [req.user.id]);
-  if (mode === 'cpl' && !user.paystack_authorization_code) {
-    return res.status(400).json({ error: 'Save a card for pay-per-lead billing before switching to it.' });
-  }
-  if (mode === 'cpl' && user.cpl_charge_failing) {
-    return res.status(400).json({ error: 'Your card on file is failing to charge — replace it before switching back to pay-per-lead.' });
+  try {
+    const { mode } = req.body || {};
+    if (!['subscription', 'credits', 'cpl'].includes(mode)) {
+      return res.status(400).json({ error: 'Unknown billing mode.' });
+    }
+    const user = await get('SELECT credit_balance, paystack_authorization_code, cpl_charge_failing FROM users WHERE id = ?', [req.user.id]);
+    if (mode === 'cpl' && !user.paystack_authorization_code) {
+      return res.status(400).json({ error: 'Save a card for pay-per-lead billing before switching to it.' });
+    }
+    if (mode === 'cpl' && user.cpl_charge_failing) {
+      return res.status(400).json({ error: 'Your card on file is failing to charge — replace it before switching back to pay-per-lead.' });
+    }
+    await run('UPDATE users SET billing_mode = ? WHERE id = ?', [mode, req.user.id]);
+    res.json({ ok: true, billingMode: mode });
+  } catch (err) {
+    console.error('[billing] /mode failed:', err);
+    res.status(500).json({ error: 'Could not switch billing mode. Try again.' });
   }
 });
 
