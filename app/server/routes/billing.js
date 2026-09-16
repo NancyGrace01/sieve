@@ -40,7 +40,14 @@ router.post('/verify', requireAuth, async (req, res) => {
     if (data.data.amount !== PLAN_PRICES_KOBO[plan]) {
       return res.status(402).json({ error: 'Amount paid does not match the selected plan.' });
     }
-    await run('UPDATE users SET plan = ?, has_ever_paid = true WHERE id = ?', [plan, req.user.id]);
+    // No recurring charge behind this — the business is expected to come
+    // back and pay again next month. plan_expires_at is how a lapsed
+    // subscription gets detected (see billingGate and scorecards.js's
+    // create-gate) once that month is up.
+    await run(
+      "UPDATE users SET plan = ?, has_ever_paid = true, plan_expires_at = now() + interval '30 days' WHERE id = ?",
+      [plan, req.user.id]
+    );
     res.json({ ok: true, plan });
   } catch (err) {
     res.status(502).json({ error: 'Could not reach Paystack to verify this payment. Try again.' });
@@ -164,7 +171,7 @@ router.post('/mode', requireAuth, async (req, res) => {
 
 router.get('/wallet', requireAuth, async (req, res) => {
   const user = await get(
-    'SELECT plan, billing_mode, credit_balance, cpl_rate_kobo, paystack_authorization_code, cpl_charge_failing, has_ever_paid FROM users WHERE id = ?',
+    'SELECT plan, billing_mode, credit_balance, cpl_rate_kobo, paystack_authorization_code, cpl_charge_failing, has_ever_paid, plan_expires_at FROM users WHERE id = ?',
     [req.user.id]
   );
   const { total } = await get(
@@ -172,6 +179,7 @@ router.get('/wallet', requireAuth, async (req, res) => {
     [req.user.id]
   );
   const creditsPurchasedTotal = Number(total);
+  const planExpired = !!user.plan_expires_at && new Date(user.plan_expires_at) < new Date();
   res.json({
     plan: user.plan,
     billingMode: user.billing_mode,
@@ -182,6 +190,8 @@ router.get('/wallet', requireAuth, async (req, res) => {
     hasCardOnFile: !!user.paystack_authorization_code,
     cplChargeFailing: !!user.cpl_charge_failing,
     hasEverPaid: !!user.has_ever_paid,
+    planExpiresAt: user.plan_expires_at,
+    planExpired,
   });
 });
 

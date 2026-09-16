@@ -58,18 +58,44 @@
 
     function fmtNaira(kobo) { return '₦' + (kobo / 100).toLocaleString('en-NG'); }
 
+    function fmtDate(iso) {
+      return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
     async function renderWallet() {
       const wallet = await api('/billing/wallet');
       const el = document.getElementById('wallet-card');
-      el.innerHTML = `
-        <div class="wallet-mode ${MODE_COLORS[wallet.billingMode]}">${MODE_LABELS[wallet.billingMode]}</div>
-        <div class="wallet-stats">
-          <div><span class="wallet-num">${wallet.creditBalance}</span><span class="wallet-label">credits left</span></div>
-          <div><span class="wallet-num">${wallet.creditsUsed}</span><span class="wallet-label">credits used${wallet.creditsPurchasedTotal ? ` of ${wallet.creditsPurchasedTotal}` : ''}</span></div>
-          <div><span class="wallet-num">${fmtNaira(wallet.cplRateKobo)}</span><span class="wallet-label">per qualified lead</span></div>
-          <div><span class="wallet-num">${wallet.hasCardOnFile ? 'Yes' : 'No'}</span><span class="wallet-label">card on file</span></div>
-        </div>
-      `;
+      if (wallet.billingMode === 'subscription') {
+        // Credits-left/per-lead-rate/card-on-file don't mean anything under a
+        // flat monthly fee — show the plan and its expiry instead. No
+        // recurring charge exists behind this, so "active until" is the real
+        // status, not a renewal date Paystack will honour on its own.
+        const planName = wallet.plan && wallet.plan !== 'free'
+          ? wallet.plan.charAt(0).toUpperCase() + wallet.plan.slice(1)
+          : 'No plan yet';
+        const statusHtml = wallet.planExpired
+          ? `<span class="wallet-num" style="color:var(--bad,#b3261e);">Expired</span><span class="wallet-label">${wallet.planExpiresAt ? fmtDate(wallet.planExpiresAt) : ''}</span>`
+          : wallet.planExpiresAt
+            ? `<span class="wallet-num">${fmtDate(wallet.planExpiresAt)}</span><span class="wallet-label">active until</span>`
+            : `<span class="wallet-num">—</span><span class="wallet-label">active until</span>`;
+        el.innerHTML = `
+          <div class="wallet-mode ${MODE_COLORS[wallet.billingMode]}">${MODE_LABELS[wallet.billingMode]}</div>
+          <div class="wallet-stats">
+            <div><span class="wallet-num">${planName}</span><span class="wallet-label">current plan</span></div>
+            <div>${statusHtml}</div>
+          </div>
+        `;
+      } else {
+        el.innerHTML = `
+          <div class="wallet-mode ${MODE_COLORS[wallet.billingMode]}">${MODE_LABELS[wallet.billingMode]}</div>
+          <div class="wallet-stats">
+            <div><span class="wallet-num">${wallet.creditBalance}</span><span class="wallet-label">credits left</span></div>
+            <div><span class="wallet-num">${wallet.creditsUsed}</span><span class="wallet-label">credits used${wallet.creditsPurchasedTotal ? ` of ${wallet.creditsPurchasedTotal}` : ''}</span></div>
+            <div><span class="wallet-num">${fmtNaira(wallet.cplRateKobo)}</span><span class="wallet-label">per qualified lead</span></div>
+            <div><span class="wallet-num">${wallet.hasCardOnFile ? 'Yes' : 'No'}</span><span class="wallet-label">card on file</span></div>
+          </div>
+        `;
+      }
 
       // Same check the server runs before showing a scorecard to a visitor
       // (billingGate in routes/public.js) — surfaced here, before Paystack,
@@ -81,6 +107,8 @@
         alertEl.innerHTML = `<div class="billing-alert"><span><strong>We couldn't charge your card for a recent lead.</strong> Your scorecards can't collect leads again until you replace your card.</span><button type="button" class="btn btn-accent btn-sm" data-jump-tab="cpl">Replace card</button></div>`;
       } else if (wallet.billingMode === 'cpl' && !wallet.hasCardOnFile) {
         alertEl.innerHTML = `<div class="billing-alert"><span><strong>No card on file for pay-per-lead.</strong> Your scorecards can't collect leads until you save a card.</span><button type="button" class="btn btn-accent btn-sm" data-jump-tab="cpl">Save a card</button></div>`;
+      } else if (wallet.billingMode === 'subscription' && wallet.planExpired) {
+        alertEl.innerHTML = `<div class="billing-alert"><span><strong>Your subscription has expired.</strong> Your scorecard links still work, but visitors can't submit a response or get a result until you renew.</span><button type="button" class="btn btn-accent btn-sm" data-jump-tab="subscription">Renew now</button></div>`;
       } else {
         alertEl.innerHTML = '';
       }
@@ -220,19 +248,24 @@
     async function renderSubscription() {
       const [{ plans }, wallet] = await Promise.all([api('/billing/plan-prices'), api('/billing/wallet')]);
       const plansEl = document.getElementById('plans');
-      plansEl.innerHTML = plans.map(p => `
-        <div class="plan-mini ${currentUser.plan === p.key ? 'current' : ''}">
+      // Once plan_expires_at is in the past, nothing here counts as "current"
+      // any more — this is what puts all 3 plans back to a plain "Upgrade"
+      // state instead of one showing as active forever after a single payment.
+      const isCurrent = (key) => wallet.plan === key && !wallet.planExpired;
+      plansEl.innerHTML = (wallet.planExpired ? `<p style="font-size:12.5px;color:var(--bad,#b3261e);font-weight:700;margin-bottom:10px;">Your subscription expired${wallet.planExpiresAt ? ` on ${fmtDate(wallet.planExpiresAt)}` : ''} — pick a plan below to renew.</p>` : '') +
+        plans.map(p => `
+        <div class="plan-mini ${isCurrent(p.key) ? 'current' : ''}">
           <div>
             <strong>${PLAN_LABELS[p.key] || p.key}</strong>
-            ${currentUser.plan === p.key ? '<div style="font-size:12.5px;color:var(--good);font-weight:700;">Current plan</div>' : ''}
+            ${isCurrent(p.key) ? '<div style="font-size:12.5px;color:var(--good);font-weight:700;">Current plan</div>' : ''}
           </div>
-          <button class="btn ${currentUser.plan === p.key ? 'btn-ghost' : 'btn-accent'} btn-sm" data-pay="${p.key}" data-amount="${p.amountKobo}" ${!paystackPublicKey ? 'disabled' : ''}>
-            ${currentUser.plan === p.key ? 'Active' : 'Upgrade'}
+          <button class="btn ${isCurrent(p.key) ? 'btn-ghost' : 'btn-accent'} btn-sm" data-pay="${p.key}" data-amount="${p.amountKobo}" ${!paystackPublicKey ? 'disabled' : ''}>
+            ${isCurrent(p.key) ? 'Active' : 'Upgrade'}
           </button>
         </div>
       `).join('') + (wallet.billingMode !== 'subscription' ? `
         <button class="btn btn-ghost btn-sm" id="use-sub-mode" style="margin-top:6px;">Switch active billing to Subscription</button>
-      ` : '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Subscription is your active billing mode.</p>');
+      ` : wallet.planExpired ? '' : '<p style="font-size:12.5px;color:var(--good);font-weight:700;margin-top:4px;">Subscription is your active billing mode.</p>');
 
       plansEl.querySelectorAll('[data-pay]').forEach(btn => {
         btn.addEventListener('click', () => {

@@ -40,7 +40,7 @@ const GATED_MESSAGE = "This scorecard isn't accepting responses right now — pl
 
 async function billingGate(scorecardRow) {
   const owner = await get(
-    'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid FROM users WHERE id = ?',
+    'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid, plan_expires_at FROM users WHERE id = ?',
     [scorecardRow.user_id]
   );
   if (!owner) return null;
@@ -58,7 +58,14 @@ async function billingGate(scorecardRow) {
     return null;
   }
 
-  if (owner.billing_mode === 'subscription') return null;
+  // No recurring charge behind subscription mode — plan_expires_at is set
+  // 30 days out on each successful payment (see billing.js /verify), so a
+  // lapsed subscription that was never renewed gates the same as any other
+  // exhausted billing mode instead of silently staying open forever.
+  if (owner.billing_mode === 'subscription') {
+    if (owner.plan_expires_at && new Date(owner.plan_expires_at) < new Date()) return GATED_MESSAGE;
+    return null;
+  }
   if (owner.billing_mode === 'credits' && owner.credit_balance <= 0) return GATED_MESSAGE;
   if (owner.billing_mode === 'cpl' && (!owner.paystack_authorization_code || owner.cpl_charge_failing)) return GATED_MESSAGE;
   return null;

@@ -79,6 +79,12 @@ async function migrate() {
       credit_exhausted_notified_at TIMESTAMPTZ,
       has_ever_paid BOOLEAN NOT NULL DEFAULT false,
       cpl_charge_failing BOOLEAN NOT NULL DEFAULT false,
+      -- Set on a successful subscription payment (now() + 30 days) — there's
+      -- no recurring charge behind this, so it's how a lapsed subscription is
+      -- detected: once this is in the past, the account is treated the same
+      -- as any other exhausted billing mode. NULL for an account that has
+      -- never paid for a subscription plan.
+      plan_expires_at TIMESTAMPTZ,
       created_at TEXT NOT NULL DEFAULT (now()::text)
     );
 
@@ -207,6 +213,7 @@ async function migrate() {
     ['credit_exhausted_notified_at', 'TIMESTAMPTZ'],
     ['has_ever_paid', 'BOOLEAN NOT NULL DEFAULT false'],
     ['cpl_charge_failing', 'BOOLEAN NOT NULL DEFAULT false'],
+    ['plan_expires_at', 'TIMESTAMPTZ'],
   ];
   for (const [name, def] of newUserColumns) {
     if (!userColumns.has(name)) {
