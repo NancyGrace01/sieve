@@ -7,6 +7,8 @@
 // verified response from Paystack's own servers — the simulation path never
 // runs once a real key is set.
 
+const PAYSTACK_TIMEOUT_MS = 15000;
+
 async function verifyTransaction(reference, { expectedAmountKobo } = {}) {
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
   if (!secretKey) {
@@ -24,6 +26,7 @@ async function verifyTransaction(reference, { expectedAmountKobo } = {}) {
   }
   const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
     headers: { Authorization: `Bearer ${secretKey}` },
+    signal: AbortSignal.timeout(PAYSTACK_TIMEOUT_MS),
   });
   return res.json();
 }
@@ -39,6 +42,7 @@ async function chargeAuthorization({ authorizationCode, email, amountKobo }) {
     method: 'POST',
     headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ authorization_code: authorizationCode, email, amount: amountKobo }),
+    signal: AbortSignal.timeout(PAYSTACK_TIMEOUT_MS),
   });
   return res.json();
 }
@@ -69,6 +73,7 @@ async function refundTransaction(reference, { amountKobo, customerNote, merchant
     method: 'POST',
     headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(PAYSTACK_TIMEOUT_MS),
   });
   return res.json();
 }
