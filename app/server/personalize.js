@@ -81,32 +81,16 @@ const CATEGORY_BASE = {
   ],
 };
 
-// Every prefix ends as a connector (a colon or a dash) rather than a full
-// stop, so joining it with a lowercased continuation always reads as one
-// grammatical sentence, never "...it's this. conversion is...".
-const WEAKEST_PREFIX = [
-  'The place to focus first: ',
-  "The clearest opportunity in the whole result: ",
-  'Start here: ',
-  'Out of everything measured, this is what matters most right now: ',
-  'Priority one: ',
-];
-
-const STRONGEST_PREFIX = [
-  'Your standout: ',
-  "What's carrying the result: ",
-  'Lean into this — ',
-  'The clearest strength in the whole picture: ',
-  'Worth noting first: ',
-];
-
-function categoryMessage(label, score, role, seed) {
-  const band = bandFor(score);
-  const base = pick(`${seed}:base`, CATEGORY_BASE[band])(label);
-  if (role === 'weakest') return pick(`${seed}:prefix`, WEAKEST_PREFIX) + base.charAt(0).toLowerCase() + base.slice(1);
-  if (role === 'strongest') return pick(`${seed}:prefix`, STRONGEST_PREFIX) + base.charAt(0).toLowerCase() + base.slice(1);
-  return base;
-}
+// --- Category headline — a bold, evergreen thesis statement shown above the
+// score-driven paragraph, matching the reference's per-category deep-dive
+// (e.g. "Lead by empowering others; true success comes when everyone thrives
+// in their unique roles."). The reference can write these because its
+// categories are fixed and known in advance; Sieve's are whatever a business
+// types into the builder, so there's no way to hand-write a bespoke thesis
+// for an arbitrary label the way a human editor would. The owner can still
+// write their own per category (`c.headline` — evergreen, shown regardless of
+// score, exactly like the reference); short of that, this generates one that
+// at least reflects the category's current band, referencing the label. -----
 
 const CATEGORY_HEADLINE_BASE = {
   strong: [
@@ -129,6 +113,16 @@ const CATEGORY_HEADLINE_BASE = {
 function categoryHeadline(label, band3, seed) {
   return pick(`${seed}:headline`, CATEGORY_HEADLINE_BASE[band3])(label);
 }
+
+// --- Category action checklist — generic, band-driven improvement steps
+// shown as a short checklist under each category's paragraph (matching the
+// reference's "Delegation / Performance Feedback / Time Management" format).
+// These are deliberately about *how to improve at anything* (goal clarity,
+// feedback loops, focused practice) rather than domain-specific advice, since
+// Sieve can't know what an arbitrary category like "Fit" or "Investor
+// Readiness" actually means the way a fixed, known category can. Two
+// alternate full sets per band (picked as a whole, not mixed item-by-item) so
+// the trio always reads as one coherent piece of advice. --------------------
 
 const CATEGORY_CHECKLIST_BASE = {
   strong: [
@@ -171,6 +165,33 @@ const CATEGORY_CHECKLIST_BASE = {
 
 function categoryChecklist(band3, seed) {
   return pick(`${seed}:checklist`, CATEGORY_CHECKLIST_BASE[band3]);
+}
+
+// Every prefix ends as a connector (a colon or a dash) rather than a full
+// stop, so joining it with a lowercased continuation always reads as one
+// grammatical sentence, never "...it's this. conversion is...".
+const WEAKEST_PREFIX = [
+  'The place to focus first: ',
+  "The clearest opportunity in the whole result: ",
+  'Start here: ',
+  'Out of everything measured, this is what matters most right now: ',
+  'Priority one: ',
+];
+
+const STRONGEST_PREFIX = [
+  'Your standout: ',
+  "What's carrying the result: ",
+  'Lean into this — ',
+  'The clearest strength in the whole picture: ',
+  'Worth noting first: ',
+];
+
+function categoryMessage(label, score, role, seed) {
+  const band = bandFor(score);
+  const base = pick(`${seed}:base`, CATEGORY_BASE[band])(label);
+  if (role === 'weakest') return pick(`${seed}:prefix`, WEAKEST_PREFIX) + base.charAt(0).toLowerCase() + base.slice(1);
+  if (role === 'strongest') return pick(`${seed}:prefix`, STRONGEST_PREFIX) + base.charAt(0).toLowerCase() + base.slice(1);
+  return base;
 }
 
 // --- Tier headline & message, driven by the overall score --------------
@@ -225,35 +246,60 @@ const TIER_MESSAGE_SINGLE = {
   struggling: [l => `${l} is significantly behind — and since it's the whole picture here, it's the clear place to start.`, l => `This result comes down entirely to ${l.toLowerCase()}, which needs the most attention right now.`],
 };
 
-// A short, concrete suggestion sentence appended to the multi-category tier
-// message, always naming the weakest category — this is what turns the
-// top-level summary from "here's what's going on" into "...and here's what
-// to do about it." Only appended when the weakest category is a genuinely
-// notable gap (see `weakestIsNotable` below) — a category that's merely the
-// lowest of an otherwise uniformly strong result doesn't deserve a "fix
-// this" suggestion. Never used in the single-category branch, since that
-// branch is already entirely about the one category.
-const TIER_SUGGESTION = [
-  w => `The clearest next step: put focused, deliberate attention on ${w.toLowerCase()} before anything else.`,
-  w => `If there's one place to start, it's ${w.toLowerCase()} — closing even part of that gap would lift the whole result.`,
-  w => `The most useful next move here is a concrete plan for ${w.toLowerCase()} — everything else gets easier once that's addressed.`,
-  w => `Worth treating as the real priority: a specific, honest plan for improving ${w.toLowerCase()} would move the needle most.`,
-];
+// A short, concrete suggestion sentence appended to every tier message —
+// always naming the category worth focusing on next — so the summary under
+// the donut always reads as "here's what's going on AND here's what to do
+// about it," on every result, not just the ones with a glaring weak point.
+// Keyed by the same overall band as TIER_MESSAGE/TIER_MESSAGE_SINGLE above,
+// so the tone always matches — "protect this" for an already-strong band,
+// "here's the fix" for a weak one — rather than one generic phrasing forced
+// onto every score range.
+// Deliberately worded to avoid echoing TIER_MESSAGE/TIER_MESSAGE_SINGLE's own
+// phrasing for the same band (e.g. never re-using "sharpen", "next real gain
+// sits", "clearest next move") — the two are always shown back to back in
+// the same paragraph, so any shared phrase reads as an awkward, literal
+// repetition rather than two distinct sentences.
+const TIER_SUGGESTION = {
+  exceptional: [
+    w => `The only thing left to do about ${w.toLowerCase()} is keep it from sliding while everything else gets the spotlight.`,
+    w => `Treat ${w.toLowerCase()} the same way as the rest of this result — a quick regular check-in is enough to keep it exactly where it is.`,
+  ],
+  strong: [
+    w => `A focused hour or two on ${w.toLowerCase()} is realistically all it would take to round this out.`,
+    w => `${w} is the one thing worth scheduling real time for next — everything else here is already working.`,
+  ],
+  solid: [
+    w => `Put ${w.toLowerCase()} at the top of the list for what to work on next — it's the most realistic place to actually move this result.`,
+    w => `A specific, deliberate change to ${w.toLowerCase()} — not a vague intention — is what would shift this from solid to strong.`,
+  ],
+  developing: [
+    w => `The clearest next step: put focused, deliberate attention on ${w.toLowerCase()} before anything else.`,
+    w => `If there's one place to start, it's ${w.toLowerCase()} — closing even part of that gap would lift the whole result.`,
+  ],
+  weak: [
+    w => `The most useful next move here is a concrete plan for ${w.toLowerCase()} — everything else gets easier once that's addressed.`,
+    w => `Worth treating as the real priority: a specific, honest plan for improving ${w.toLowerCase()} would move the needle most.`,
+  ],
+  struggling: [
+    w => `The single most useful thing to do next is build a real, specific plan for ${w.toLowerCase()} — everything else follows from that.`,
+    w => `Make ${w.toLowerCase()} the one non-negotiable focus for now — it's doing more to shape this result than anything else measured.`,
+  ],
+};
 
-function tierSuggestion(weakestLabel, seed) {
-  return pick(`${seed}:suggestion`, TIER_SUGGESTION)(weakestLabel);
+function tierSuggestion(label, band, seed) {
+  return pick(`${seed}:suggestion`, TIER_SUGGESTION[band])(label);
 }
 
-function tierMessage(overall, strongestLabel, weakestLabel, weakestIsNotable, seed) {
+function tierMessage(overall, strongestLabel, weakestLabel, seed) {
   const band = bandFor(overall);
   if (strongestLabel === weakestLabel) {
     const fn = pick(`${seed}:message`, TIER_MESSAGE_SINGLE[band]);
-    return fn(strongestLabel);
+    const base = fn(strongestLabel);
+    return `${base} ${tierSuggestion(strongestLabel, band, `${seed}:suggestion`)}`;
   }
   const fn = pick(`${seed}:message`, TIER_MESSAGE[band]);
   const base = fn(strongestLabel, weakestLabel);
-  if (!weakestIsNotable) return base;
-  return `${base} ${tierSuggestion(weakestLabel, `${seed}:suggestion`)}`;
+  return `${base} ${tierSuggestion(weakestLabel, band, `${seed}:suggestion`)}`;
 }
 
 // --- Per-answer insight, driven by how the chosen option ranks among the
@@ -284,20 +330,57 @@ const ANSWER_INSIGHT = {
 };
 
 // --- The recommendation block's own headline — addressed to the respondent
-// by name, matching the reference behaviour
+// by name, matching the reference behaviour: a plain "Recommended next step"
+// label reads like a form footer, a question with their own name in it reads
+// like an invitation. Still only ever shown once the owner has engaged with
+// this feature at all — written their own text, given it a link, or both
+// (see buildPersonalizedResult) — nothing here invents a CTA out of thin air
+// for a tier the owner never touched. -----------------------------------
 
-const CTA_HEADLINE = [
-  n => `Would you like to gain deeper insights on your results, ${n}?`,
-  n => `Want to go deeper on what this actually means, ${n}?`,
-  n => `Ready to turn this into a real next step, ${n}?`,
-  n => `${n}, want a second pair of eyes on what this result actually means for you?`,
-];
+// The recommendation paragraph itself, generated only as a fallback for a
+// tier where the owner gave a destination link but left the invitation text
+// blank — matching every other field in this file ("owner text always
+// wins," generated otherwise), rather than the one place that used to
+// require the owner to write something before a CTA could show at all.
+// Distinct phrasing from TIER_SUGGESTION on purpose — the tier summary
+// above already names the weakest category once; this shouldn't just
+// repeat that sentence inside the CTA card underneath it.
+const TIER_RECOMMENDATION = {
+  exceptional: [
+    w => `Everything here is working — if you'd like a second opinion on keeping it that way, ${w.toLowerCase()} included, this is the next step.`,
+    w => `A result like this is worth protecting. If you'd like professional help making sure ${w.toLowerCase()} stays this strong, here's where to start.`,
+  ],
+  strong: [
+    w => `You're close to a genuinely excellent result. If you'd like hands-on help closing the gap on ${w.toLowerCase()}, this is the next step.`,
+    w => `A little expert input on ${w.toLowerCase()} could be what pushes this from good to excellent — here's where to get it.`,
+  ],
+  solid: [
+    w => `${w} is the most realistic place to improve from here. If you'd like help putting a real plan together for it, this is the next step.`,
+    w => `A workable result with a clear next move — get expert input on ${w.toLowerCase()} and turn this into a genuinely strong one.`,
+  ],
+  developing: [
+    w => `${w} is the clearest place to start. If you'd like help building a real plan for it, this is the next step.`,
+    w => `Closing the gap on ${w.toLowerCase()} would change this result the most — get expert help putting a plan together for it.`,
+  ],
+  weak: [
+    w => `${w} needs real, focused attention. If you'd like expert help building a plan to fix it, this is the next step.`,
+    w => `A dedicated plan for ${w.toLowerCase()} would make the biggest difference here — here's where to get help putting one together.`,
+  ],
+  struggling: [
+    w => `${w} is the clearest place to start rebuilding from. If you'd like expert help putting together a real plan, this is the next step.`,
+    w => `This is the kind of result worth talking through with someone who's helped others close a gap like this before.`,
+  ],
+};
 
-// Used instead of the generic CTA_HEADLINE above whenever there's a clear,
-// notable weak category to name — ties the "Book Now" invitation directly
-// to it, so the recommendation paragraph and the CTA button beneath it read
-// as one connected thought (e.g. weakest category "Design" -> "Want to talk
-// to a design expert?") rather than two unrelated blocks.
+function tierRecommendation(overall, weakestLabel, seed) {
+  const band = bandFor(overall);
+  return pick(`${seed}:recommendation`, TIER_RECOMMENDATION[band])(weakestLabel);
+}
+
+// Always ties the "Book Now" invitation to the weakest category by name, so
+// the recommendation paragraph and the CTA button beneath it read as one
+// connected thought on every scorecard (e.g. weakest category "Design" ->
+// "Want to talk to a design expert?") rather than two unrelated blocks.
 const CTA_HEADLINE_CATEGORY = [
   (n, w) => `Want to talk to a ${w.toLowerCase()} expert, ${n}?`,
   (n, w) => `${n}, ready to get real help with ${w.toLowerCase()}?`,
@@ -305,13 +388,9 @@ const CTA_HEADLINE_CATEGORY = [
   (n, w) => `Ready to turn ${w.toLowerCase()} into a real next step, ${n}?`,
 ];
 
-function ctaHeadline(firstName, weakestLabel, tieToCategory, seed) {
-  if (tieToCategory && weakestLabel) {
-    const fn = pick(`${seed}:ctaHeadlineCat`, CTA_HEADLINE_CATEGORY);
-    return fn(firstName, weakestLabel);
-  }
-  const fn = pick(`${seed}:ctaHeadline`, CTA_HEADLINE);
-  return fn(firstName);
+function ctaHeadline(firstName, weakestLabel, seed) {
+  const fn = pick(`${seed}:ctaHeadline`, CTA_HEADLINE_CATEGORY);
+  return fn(firstName, weakestLabel);
 }
 
 function answerInsight(questionText, chosenLabel, rankFraction, seed) {
@@ -347,7 +426,7 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
   const weakestIsNotable = ['developing', 'weak', 'struggling'].includes(bandFor(weakest.score));
   const strongestIsNotable = ['exceptional', 'strong', 'solid'].includes(bandFor(strongest.score));
 
-    // Built from `categories` (the scorecard's own defined order), not `ranked`
+  // Built from `categories` (the scorecard's own defined order), not `ranked`
   // (sorted by score) — the donut/legend/tabs on the result page need a fixed
   // order that stays the same for every lead, the way the ScoreApp reference
   // does. `ranked` is still used to decide which category gets the
@@ -359,7 +438,10 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
       : 'middle';
     const band3 = bandFor(c.score) === 'exceptional' || bandFor(c.score) === 'strong' ? 'strong'
       : bandFor(c.score) === 'weak' || bandFor(c.score) === 'struggling' ? 'weak'
-      : 'developing';
+      : 'developing'; // collapsed to the three bands the UI already colours (green/orange/red)
+    // The owner can write a low-score message and a high-score message per
+    // category (matching ScoreApp's model exactly) — used when it applies,
+    // otherwise this category's commentary is generated.
     const ownerMessage = band3 === 'weak' ? c.lowMessage : band3 === 'strong' ? c.highMessage : null;
     const message = (ownerMessage && ownerMessage.trim()) || categoryMessage(c.label, c.score, role, `${seedBase}:${c.key}`);
     const ownerHeadline = c.headline && c.headline.trim();
@@ -387,13 +469,19 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
 
   const ownerHeadline = tierConfig.headline && tierConfig.headline.trim();
   const ownerMessage = tierConfig.message && tierConfig.message.trim();
-  // The recommendation is the one place with no generated fallback text —
-  // matching the original design reasoning: a made-up "book a call" with no
-  // real link behind it isn't useful, so if the owner hasn't written a
-  // recommendation for this tier, no recommendation block shows at all.
-  const recommendation = (tierConfig.recommendation && tierConfig.recommendation.trim()) || '';
   const recommendationUrl = (tierConfig.recommendationUrl && tierConfig.recommendationUrl.trim()) || '';
   const recommendationLabel = (tierConfig.recommendationLabel && tierConfig.recommendationLabel.trim()) || 'Book Now';
+  const ownerRecommendation = tierConfig.recommendation && tierConfig.recommendation.trim();
+  // A CTA block only ever shows once the owner has engaged with this
+  // feature at all — written their own invitation text, given it a
+  // destination link, or both; nothing here invents one for a tier the
+  // owner never touched. Once there's a link but no text (a real gap this
+  // was hitting: leaving the text blank was meant as "auto-write this,"
+  // the same as every other field in this file, but this one field alone
+  // had no generated fallback and silently produced no CTA at all), the
+  // text gets generated instead of the block just disappearing.
+  const recommendation = ownerRecommendation
+    || (recommendationUrl ? tierRecommendation(overall, weakest.label, `${seedBase}:recommendation`) : '');
 
   return {
     greetingName: firstName,
@@ -401,19 +489,16 @@ function buildPersonalizedResult({ scorecard, lead, answers, categoryScores, ove
     overall,
     tierLabel,
     tierHeadline: ownerHeadline || tierHeadline(overall, `${seedBase}:tier`),
-    tierMessage: ownerMessage || tierMessage(overall, strongest.label, weakest.label, weakestIsNotable, `${seedBase}:tier`),
+    tierMessage: ownerMessage || tierMessage(overall, strongest.label, weakest.label, `${seedBase}:tier`),
     recommendation,
     recommendationUrl,
     recommendationLabel,
     // Only meaningful once there's an actual recommendation to sit next to —
     // take.js only renders the CTA block at all when `recommendation` is set.
-    // Tied to the weakest category's own label whenever that category is a
-    // genuinely notable gap (or it's the only category there is), so the
-    // recommendation and the "Book Now" CTA beneath it read as one
-    // connected thought instead of two unrelated blocks.
-    ctaHeadline: recommendation
-      ? ctaHeadline(firstName, weakest.label, weakest.label === strongest.label || weakestIsNotable, `${seedBase}:cta`)
-      : '',
+    // Always tied to the weakest category's own label, so the recommendation
+    // and the "Book Now" CTA beneath it read as one connected thought on
+    // every scorecard, not just the ones with an obvious weak point.
+    ctaHeadline: recommendation ? ctaHeadline(firstName, weakest.label, `${seedBase}:cta`) : '',
     categoryNarratives,
     answerInsights,
   };

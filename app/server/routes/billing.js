@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('node:crypto');
 const { run, get } = require('../db');
 const requireAuth = require('../middleware/requireAuth');
-const { verifyTransaction, chargeAuthorization } = require('../paystack');
+const { verifyTransaction, chargeAuthorization, refundTransaction } = require('../paystack');
 const { sendEmail, appUrl } = require('../mailer');
 
 const router = express.Router();
@@ -91,7 +91,7 @@ router.post('/credits/verify', requireAuth, async (req, res) => {
 // individually in real time as it comes in. ---
 
 const CPL_DEFAULT_RATE_KOBO = 20000; // ₦200 per qualified lead
-const CARD_VERIFY_AMOUNT_KOBO = 10000;
+const CARD_VERIFY_AMOUNT_KOBO = 10000; // ₦100 — this charge only proves the card is real, it's never kept. Paystack itself never refunds it automatically (see refundTransaction in paystack.js) — we request the refund ourselves, right after verification, so it's automatic from the cardholder's side without anyone at the business doing it by hand.
 
 router.get('/cpl-rate', (req, res) => {
   res.json({ rateKobo: CPL_DEFAULT_RATE_KOBO });
@@ -105,6 +105,12 @@ router.post('/cpl/save-card', requireAuth, async (req, res) => {
     if (!data.status || data.data.status !== 'success') {
       return res.status(402).json({ error: 'Card verification was not successful.' });
     }
+    // Matches the same check /verify and /credits/verify already do — without
+    // it, any successful Paystack reference (paid for any amount, for
+    // anything) would be accepted as a valid card verification.
+    if (data.data.amount !== CARD_VERIFY_AMOUNT_KOBO) {
+      return res.status(402).json({ error: 'Amount charged for card verification does not match.' });
+    }
     const authCode = data.data.authorization && data.data.authorization.authorization_code;
     if (!authCode) {
       return res.status(502).json({ error: 'Paystack did not return a reusable card authorization. Try a different card.' });
@@ -113,7 +119,20 @@ router.post('/cpl/save-card', requireAuth, async (req, res) => {
       'UPDATE users SET paystack_authorization_code = ?, cpl_rate_kobo = ?, cpl_charge_failing = false, has_ever_paid = true WHERE id = ?',
       [authCode, CPL_DEFAULT_RATE_KOBO, req.user.id]
     );
-    res.json({ ok: true, rateKobo: CPL_DEFAULT_RATE_KOBO });
+    // Request the refund now, server-side — this is the actual mechanism
+    // behind "always refunded" (see the comment on refundTransaction in
+    // paystack.js: Paystack never does this on its own). A refund request
+    // failing here should never block the card from being usable — it's
+    // already saved and working — so this is logged, not thrown.
+    let refundInitiated = false;
+    try {
+      const refund = await refundTransaction(reference, { merchantNote: 'Sieve card-verification charge — refunded automatically.' });
+      refundInitiated = !!refund.status;
+      if (!refund.status) console.error('[billing] card-verify refund request was not accepted by Paystack:', refund.message || refund);
+    } catch (refundErr) {
+      console.error('[billing] card-verify refund request failed:', refundErr);
+    }
+    res.json({ ok: true, rateKobo: CPL_DEFAULT_RATE_KOBO, refundInitiated });
   } catch (err) {
     res.status(502).json({ error: 'Could not reach Paystack to verify this card. Try again.' });
   }

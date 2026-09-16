@@ -43,4 +43,34 @@ async function chargeAuthorization({ authorizationCode, email, amountKobo }) {
   return res.json();
 }
 
-module.exports = { verifyTransaction, chargeAuthorization };
+// Paystack never refunds anything on its own — a successful transaction
+// (like the card-verification charge in routes/billing.js) sits in the
+// merchant's balance until *someone* calls this endpoint
+// (https://paystack.com/docs/api/refund/). Calling it here, immediately
+// after a successful charge, is what makes "always refunded" actually true
+// for the cardholder without anyone at the business doing it by hand.
+// Queued as `pending` on Paystack's side — it can take a few business days
+// to actually land back on the customer's card/statement.
+async function refundTransaction(reference, { amountKobo, customerNote, merchantNote } = {}) {
+  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  if (!secretKey) {
+    console.log(`[paystack] PAYSTACK_SECRET_KEY not set — simulating a queued refund for reference "${reference}".`);
+    return {
+      status: true,
+      simulated: true,
+      data: { id: `sim_refund_${reference}`, amount: amountKobo ?? null, status: 'pending', currency: 'NGN' },
+    };
+  }
+  const body = { transaction: reference };
+  if (amountKobo != null) body.amount = amountKobo;
+  if (customerNote) body.customer_note = customerNote;
+  if (merchantNote) body.merchant_note = merchantNote;
+  const res = await fetch('https://api.paystack.co/refund', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+module.exports = { verifyTransaction, chargeAuthorization, refundTransaction };

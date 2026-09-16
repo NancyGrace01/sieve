@@ -37,7 +37,7 @@
       </section>
 
       <section id="tab-cpl" class="bill-panel" style="display:none;">
-        <p class="bill-panel-intro">No upfront spend at all. Save a card once (a small ₦100 verification charge) and pay only for each qualified lead a scorecard produces — billed automatically the moment they submit.</p>
+        <p class="bill-panel-intro">No upfront spend at all. Save a card once (a small ₦100 verification charge — refunded automatically, though it can take a few business days to show back up on your statement)
         <div id="cpl-box"></div>
       </section>
 
@@ -141,8 +141,19 @@
             onSuccess: (reference) => {
               api('/billing/credits/verify', { method: 'POST', body: { reference, bundleKey } })
                 .then(async (res) => {
-                  await api('/billing/mode', { method: 'POST', body: { mode: 'credits' } }).catch(() => {});
-                  showToast(`Payment verified — ${res.creditsAdded} credits added.`);
+                  // Same fix as the CPL save-card flow below — don't swallow
+                  // a real mode-switch failure, so credits get added but the
+                  // wallet silently stays on the old billing mode with no
+                  // visible error.
+                  try {
+                    await api('/billing/mode', { method: 'POST', body: { mode: 'credits' } });
+                  } catch (ex) {
+                    showToast(`${res.creditsAdded} credits added, but switching billing to Credits failed: ${ex.message}`);
+                    await renderWallet();
+                    renderCredits();
+                    return;
+                  }
+                  showToast(`Payment verified — ${res.creditsAdded} credits added.`, 'success');
                   await renderWallet();
                   renderCredits();
                 })
@@ -179,8 +190,22 @@
           onSuccess: (reference) => {
             api('/billing/cpl/save-card', { method: 'POST', body: { reference } })
               .then(async () => {
-                await api('/billing/mode', { method: 'POST', body: { mode: 'cpl' } }).catch(() => {});
-                showToast('Card saved — pay-per-lead billing is now active.');
+                // Previously this call's failure was silently swallowed
+                // (.catch(() => {})), so a real mode-switch error looked
+                // exactly like success — the card would save but billing
+                // mode would silently stay on whatever it was before,
+                // leaving old alerts (like "out of credits") on screen with
+                // no indication anything went wrong. Now a genuine failure
+                // here is surfaced with its real message instead.
+                try {
+                  await api('/billing/mode', { method: 'POST', body: { mode: 'cpl' } });
+                } catch (ex) {
+                  showToast(`Card saved, but switching billing to pay-per-lead failed: ${ex.message}`);
+                  await renderWallet();
+                  renderCpl();
+                  return;
+                }
+                showToast('Card saved — pay-per-lead billing is now active.', 'success');
                 await renderWallet();
                 renderCpl();
               })

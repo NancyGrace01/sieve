@@ -161,7 +161,7 @@ on first run. Nothing else to provision — no external database server.
   - **Pay-per-lead (CPL)** — no upfront spend at all. Save a card once via Paystack's reusable
     `charge_authorization` (proven with a small ₦100 verification charge), then every qualified
     lead a scorecard produces is billed automatically and in real time, right after that
-    person submits (₦150/lead by default). Every attempt — success or failure — is logged to
+    person submits (₦200/lead by default). Every attempt — success or failure — is logged to
     `cpl_charges`; a failed charge emails the owner so a dead card gets noticed quickly, and
     never blocks or retroactively un-scores the lead that already came in.
   - **Subscription** — the original flat-monthly-fee model (Starter/Business/Pro), kept as a

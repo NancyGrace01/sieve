@@ -83,7 +83,7 @@ test('cpl mode: saving a card (simulated) activates it, and a qualified lead fir
 
   const saveCard = await other.post('/api/billing/cpl/save-card', { reference: 'sim-card-ref-1' });
   assert.equal(saveCard.status, 200);
-  assert.equal(saveCard.data.rateKobo, 15000);
+  assert.equal(saveCard.data.rateKobo, 20000);
 
   const modeSwitch = await other.post('/api/billing/mode', { mode: 'cpl' });
   assert.equal(modeSwitch.status, 200);
@@ -114,5 +114,5 @@ test('cpl mode: saving a card (simulated) activates it, and a qualified lead fir
   const charge = await get('SELECT * FROM cpl_charges WHERE lead_id = ?', [leadId]);
   assert.ok(charge, 'a cpl_charges row should exist for this lead');
   assert.equal(charge.status, 'success');
-  assert.equal(charge.amount_kobo, 15000);
+  assert.equal(charge.amount_kobo, 20000);
 });
