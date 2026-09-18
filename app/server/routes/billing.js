@@ -87,7 +87,7 @@ router.post('/credits/verify', requireAuth, async (req, res) => {
       [crypto.randomUUID(), req.user.id, bundle.amountKobo, bundle.credits, reference]
     );
     const updated = await get('SELECT credit_balance FROM users WHERE id = ?', [req.user.id]);
-    res.json({ ok: true, creditsAdded: bundle.credits, creditBalance: updated.credit_balance });
+        res.json({ ok: true, creditsAdded: bundle.credits, creditBalance: updated.credit_balance });
   } catch (err) {
     res.status(502).json({ error: 'Could not reach Paystack to verify this payment. Try again.' });
   }
@@ -126,11 +126,7 @@ router.post('/cpl/save-card', requireAuth, async (req, res) => {
       'UPDATE users SET paystack_authorization_code = ?, cpl_rate_kobo = ?, cpl_charge_failing = false, has_ever_paid = true WHERE id = ?',
       [authCode, CPL_DEFAULT_RATE_KOBO, req.user.id]
     );
-    // Request the refund now, server-side — this is the actual mechanism
-    // behind "always refunded" (see the comment on refundTransaction in
-    // paystack.js: Paystack never does this on its own). A refund request
-    // failing here should never block the card from being usable — it's
-    // already saved and working — so this is logged, not thrown.
+    // Request the refund
     let refundInitiated = false;
     try {
       const refund = await refundTransaction(reference, { merchantNote: 'Sieve card-verification charge — refunded automatically.' });

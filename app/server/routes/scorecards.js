@@ -113,11 +113,13 @@ router.post('/', async (req, res, next) => {
     // req.user as-is and this account's saved-card authorization code
     // shouldn't ever reach the browser.
     const billing = await get(
-      'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid, plan_expires_at FROM users WHERE id = ?',
+      'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid, plan_expires_at, is_admin FROM users WHERE id = ?',
       [req.user.id]
     );
 
-    if (!billing.has_ever_paid) {
+    if (billing.is_admin) {
+      // Internal/operator accounts are never gated — see requireAdmin.js.
+    } else if (!billing.has_ever_paid) {
       // Free-trial allowance: 1 scorecard, until this account's first
       // subscription payment, credit top-up, or CPL card save. has_ever_paid
       // is one-way (see billing.js) — once it flips true this branch never

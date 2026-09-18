@@ -116,7 +116,7 @@ test('a scorecard with profile capture off reports an empty, disabled audience b
   // Same free-plan (1 scorecard) cap as api.test.js — this account already
   // owns one scorecard from an earlier test in this file.
   const { run } = require('../db');
-  await run("UPDATE users SET plan = 'business' WHERE email = ?", ['insight@test.com']);
+  await run("UPDATE users SET plan = 'business', has_ever_paid = true WHERE email = ?", ['insight@test.com']);
   const created = await owner.post('/api/scorecards', { title: 'Plain Lead Form' });
   await owner.put(`/api/scorecards/${created.data.scorecard.id}`, {
     title: 'Plain Lead Form',

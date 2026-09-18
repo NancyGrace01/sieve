@@ -36,14 +36,22 @@ const FREE_PLAN_RESPONSE_LIMIT = 10;
 // (out of credits, no card on file, past the free-plan limit) — that's not a
 // professional thing to air to the public. The real reason still reaches the
 // owner: see the credits-exhausted email + dashboard/billing banner below.
-const GATED_MESSAGE = "This scorecard isn't accepting responses right now — please check back soon.";
+const GATED_MESSAGES = {
+  freePlanLimit: "This scorecard isn't accepting responses right now — please check back soon.",
+  subscriptionExpired: "This scorecard isn't accepting responses right now — please check back soon.",
+  creditsExhausted: "This scorecard isn't accepting new responses right now — the owner is out of credits.",
+  cplFailing: "This scorecard isn't accepting responses right now — please check back soon.",
+};
 
 async function billingGate(scorecardRow) {
   const owner = await get(
-    'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid, plan_expires_at FROM users WHERE id = ?',
+    'SELECT billing_mode, credit_balance, paystack_authorization_code, cpl_charge_failing, has_ever_paid, plan_expires_at, is_admin FROM users WHERE id = ?',
     [scorecardRow.user_id]
   );
   if (!owner) return null;
+
+  // Internal/operator accounts are never gated — see requireAdmin.js.
+  if (owner.is_admin) return null;
 
   // has_ever_paid is a one-way flag (set the first time a subscription
   // payment, a credit top-up, or a CPL card save succeeds — see billing.js —
@@ -54,7 +62,7 @@ async function billingGate(scorecardRow) {
   // the moment someone drained a credit balance back to 0.
   if (!owner.has_ever_paid) {
     const { count } = await get('SELECT COUNT(*) as count FROM leads WHERE scorecard_id = ?', [scorecardRow.id]);
-    if (Number(count) >= FREE_PLAN_RESPONSE_LIMIT) return GATED_MESSAGE;
+    if (Number(count) >= FREE_PLAN_RESPONSE_LIMIT) return GATED_MESSAGES.freePlanLimit;
     return null;
   }
 
@@ -63,11 +71,11 @@ async function billingGate(scorecardRow) {
   // lapsed subscription that was never renewed gates the same as any other
   // exhausted billing mode instead of silently staying open forever.
   if (owner.billing_mode === 'subscription') {
-    if (owner.plan_expires_at && new Date(owner.plan_expires_at) < new Date()) return GATED_MESSAGE;
+    if (owner.plan_expires_at && new Date(owner.plan_expires_at) < new Date()) return GATED_MESSAGES.subscriptionExpired;
     return null;
   }
-  if (owner.billing_mode === 'credits' && owner.credit_balance <= 0) return GATED_MESSAGE;
-  if (owner.billing_mode === 'cpl' && (!owner.paystack_authorization_code || owner.cpl_charge_failing)) return GATED_MESSAGE;
+  if (owner.billing_mode === 'credits' && owner.credit_balance <= 0) return GATED_MESSAGES.creditsExhausted;
+  if (owner.billing_mode === 'cpl' && (!owner.paystack_authorization_code || owner.cpl_charge_failing)) return GATED_MESSAGES.cplFailing;
   return null;
 }
 
@@ -218,25 +226,17 @@ router.post('/scorecards/:slug/submit', submitLimiter, async (req, res, next) =>
     // both the credit and pay-per-lead models actually charge for. Never
     // blocks the response the visitor already gave; only affects future ones.
     if (owner && owner.billing_mode === 'credits') {
-      run('UPDATE users SET credit_balance = credit_balance - 1 WHERE id = ?', [owner.id])
-        .catch(err => console.error('[public] credit deduction failed:', err));
-
-      // This response is the one that took the balance to zero (or below, if
-      // a race let two through at once) — tell the owner once. The flag flip
-      // is awaited (it's one fast, single-row UPDATE) so it's reliably in
-      // place before this request finishes; only the email itself — the part
-      // that can be slow or fail — stays fire-and-forget. The
-      // `credit_exhausted_notified_at IS NULL` guard is checked and set in
-      // the same UPDATE, so this only ever fires the first time; billing.js
-      // clears the flag again the next time they top up.
-      if (Number(owner.credit_balance) - 1 <= 0) {
-        try {
+      try {
+        const { rows } = await run('UPDATE users SET credit_balance = credit_balance - 1 WHERE id = ? RETURNING credit_balance', [owner.id]);
+        const balanceAfter = rows[0] ? Number(rows[0].credit_balance) : null;
+        if (balanceAfter !== null && balanceAfter <= 0) {
           const { changes } = await run(`UPDATE users SET credit_exhausted_notified_at = now() WHERE id = ? AND credit_exhausted_notified_at IS NULL`, [owner.id]);
           if (changes > 0) creditsExhaustedEmail(owner.email, brandName).catch(err => console.error('[public] credits-exhausted email failed:', err));
-        } catch (err) {
-          console.error('[public] credits-exhausted flag update failed:', err);
         }
+      } catch (err) {
+        console.error('[public] credit deduction failed:', err);
       }
+
     } else if (owner && owner.billing_mode === 'cpl' && owner.paystack_authorization_code) {
       chargeCplLead({ owner, leadId: id }).catch(err => console.error('[public] CPL charge failed:', err));
     }

@@ -112,8 +112,6 @@
 
 <script src="script.js"></script>
 <script>
-  // Same "logged in?" nav swap as index.html — this page never had it, so it
-  // always showed Login/Get started even to a signed-in visitor.
   fetch('/api/auth/me', { credentials: 'include' })
     .then(res => {
       if (!res.ok) return;

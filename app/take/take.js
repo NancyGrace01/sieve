@@ -83,11 +83,6 @@
   }
 
   function renderGate() {
-    // A cover image — the template's own default, or the owner's replacement —
-    // is shown behind the title, intro, and the gate form itself, so a visitor
-    // sees one continuous branded moment before they start (not a plain form
-    // dropped in after a photo). No cover set: falls back to the plain card
-    // that already worked, nothing here ever looks broken or half-built.
     const cover = scorecard.coverImage && scorecard.coverImage.trim();
     const gateInner = `
         <div class="demo-q" style="margin-bottom:10px;">${escapeHtml(scorecard.title)}</div>
@@ -113,8 +108,6 @@
       const errorEl = document.getElementById('g-error');
       errorEl.style.display = 'none';
 
-      // Name, phone, and email are the whole point of the gate — mandatory on
-      // every scorecard, not conditional on anything.
       const coreMissing = ['g-first', 'g-last', 'g-phone', 'g-email']
         .some(id => !document.getElementById(id).value.trim());
       if (coreMissing) {
@@ -204,13 +197,6 @@
   const BAND_COLOR = { strong: '#16825D', developing: '#B3720C', weak: '#B3261E' };
   const BAND_LEGEND_LABEL = { strong: 'Strong', developing: 'Developing', weak: 'Needs focus' };
 
-  // Category icons — picked by keyword match against the category's own
-  // label. A fixed, known set of categories (like a reference product built
-  // for one specific assessment) can hand-pick the exact right icon per
-  // category; Sieve's categories are whatever a business types into the
-  // builder, so there's no way to know in advance what any given label means.
-  // This gets a reasonable icon for common cases and falls back to a plain
-  // target icon rather than guessing wrong.
   const CATEGORY_ICONS = {
     team: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21c0-3.3 3.6-6 8-6s8 2.7 8 6"/>',
     people: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21c0-3.3 3.6-6 8-6s8 2.7 8 6"/>',
@@ -243,11 +229,6 @@
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
   }
 
-  // Segmented result donut — one equal-width arc per category, coloured by
-  // that category's band (same colours as the bars/legend), with the overall
-  // score in the centre and a labelled leader line to each slice. Falls back
-  // to a single solid ring (the original design) when there's only one
-  // category, since a "segmented" ring of one slice is just a ring.
   function buildResultDonut(categories, overall) {
     const size = 260;
     const cx = size / 2;
@@ -395,19 +376,6 @@
       <div class="result-tab-panels">${catPanels}</div>
     ` : '';
 
-    // const insightsBlock = p.answerInsights.length ? `
-    //   <div class="result-insights">
-    //     <h3>What we noticed in your answers</h3>
-    //     ${p.answerInsights.map(a => `
-    //       <div class="result-insight">
-    //         <p class="result-insight-q">${escapeHtml(a.question)}</p>
-    //         <p class="result-insight-a">Your answer: ${escapeHtml(a.answer)}</p>
-    //         <p class="result-insight-text">${escapeHtml(a.insight)}</p>
-    //       </div>
-    //     `).join('')}
-    //   </div>
-    // ` : '';
-
     const ctaBlock = p.recommendation ? `
       <div class="result-cta">
         <div class="result-cta-icon">👋</div>
@@ -417,9 +385,6 @@
       </div>
     ` : '';
 
-    // Mobile Engagement Agency's value proposition, made visible: a real
-    // completion time and a shareable result — the marks of an engagement
-    // campaign, not just a lead form.
     const engagementBlock = result.engagementMode ? `
       <div class="result-engagement">
         ${result.timeToCompleteSeconds != null ? `<span class="result-time-badge">⏱ Completed in ${formatDuration(result.timeToCompleteSeconds)}</span>` : ''}
@@ -434,9 +399,6 @@
     const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     const whatsappIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.45 1.32 4.94L2 22l5.2-1.29A9.96 9.96 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2Zm0 18a7.96 7.96 0 0 1-4.06-1.11l-.29-.17-3.09.77.83-2.99-.19-.31A7.96 7.96 0 1 1 12 20Zm4.38-5.96c-.24-.12-1.41-.7-1.63-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.17-.7-.62-1.18-1.39-1.31-1.63-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.31-.02-.43-.06-.12-.54-1.31-.74-1.79-.2-.47-.4-.4-.54-.41h-.47c-.16 0-.42.06-.64.31-.22.24-.85.83-.85 2.04 0 1.21.87 2.37 1 2.53.12.16 1.71 2.62 4.15 3.67.58.25 1.03.4 1.38.51.58.19 1.1.16 1.52.1.46-.07 1.41-.58 1.61-1.13.2-.56.2-1.03.14-1.13-.06-.1-.22-.16-.46-.28Z"/></svg>`;
 
-    // Preview submissions never create a lead, so there's no reportUrl and
-    // nothing was emailed — say that plainly instead of the real closing
-    // copy, and skip the PDF-download link (there's no PDF behind it).
     const resultFooter = result.preview
       ? `<p style="color:var(--ink-soft);font-size:13.5px;margin-top:18px;">This was a preview — no lead was recorded, and no email or PDF was sent.</p>
          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">

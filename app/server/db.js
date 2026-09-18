@@ -85,6 +85,10 @@ async function migrate() {
       -- as any other exhausted billing mode. NULL for an account that has
       -- never paid for a subscription plan.
       plan_expires_at TIMESTAMPTZ,
+      -- Internal/operator accounts (VASNET's own) — never gated by billing,
+      -- and the only accounts that can reach /api/admin/* and admin.html.
+      -- Set by hand (there's no signup path to this); see requireAdmin.js.
+      is_admin BOOLEAN NOT NULL DEFAULT false,
       created_at TEXT NOT NULL DEFAULT (now()::text)
     );
 
@@ -188,7 +192,38 @@ async function migrate() {
       created_at TEXT NOT NULL DEFAULT (now()::text)
     );
 
+    -- Admin-managed content behind /templates.html and "Use this template" —
+    -- replaces the old static scorecard-templates.js. Structurally the same
+    -- shape as a scorecard's own editable fields (categories/questions/tiers
+    -- are the identical JSON shape scorecards.js already reads/writes), plus
+    -- the marketing metadata (description, filter_category, cta_label) that
+    -- used to live only in templates.html's hand-written cards.
+    CREATE TABLE IF NOT EXISTS templates (
+      id TEXT PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      filter_category TEXT NOT NULL DEFAULT '',
+      cover_image TEXT,
+      intro TEXT NOT NULL DEFAULT '',
+      categories TEXT NOT NULL DEFAULT '[]',
+      questions TEXT NOT NULL DEFAULT '[]',
+      tiers TEXT NOT NULL DEFAULT '[]',
+      -- Applied as the top tier's recommendation text by
+      -- createScorecardFromTemplate() client-side — see app.js. Deliberately
+      -- no URL: no template can invent a real booking link, the owner adds
+      -- that themselves once they're in the builder.
+      cta_label TEXT,
+      published INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (now()::text),
+      updated_at TEXT NOT NULL DEFAULT (now()::text)
+    );
+
+
     CREATE INDEX IF NOT EXISTS idx_scorecards_user ON scorecards(user_id);
+    CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(filter_category);
+    CREATE INDEX IF NOT EXISTS idx_templates_published ON templates(published);
     CREATE INDEX IF NOT EXISTS idx_starts_scorecard ON scorecard_starts(scorecard_id);
     CREATE INDEX IF NOT EXISTS idx_leads_scorecard ON leads(scorecard_id);
     CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
@@ -196,7 +231,6 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_credit_purchases_user ON credit_purchases(user_id);
     CREATE INDEX IF NOT EXISTS idx_cpl_charges_user ON cpl_charges(user_id);
   `);
-
   // Defensive column backfill, same intent as the old SQLite version: if this
   // ever runs against a database created before the billing-mode work, add
   // whatever's missing. Harmless no-op on a fresh database.
@@ -214,6 +248,7 @@ async function migrate() {
     ['has_ever_paid', 'BOOLEAN NOT NULL DEFAULT false'],
     ['cpl_charge_failing', 'BOOLEAN NOT NULL DEFAULT false'],
     ['plan_expires_at', 'TIMESTAMPTZ'],
+    ['is_admin', 'BOOLEAN NOT NULL DEFAULT false'],
   ];
   for (const [name, def] of newUserColumns) {
     if (!userColumns.has(name)) {

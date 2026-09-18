@@ -263,7 +263,6 @@
 
 <script src="script.js"></script>
 <script>
-  // Same "logged in?" nav swap as index.html — this page never had it.
   fetch('/api/auth/me', { credentials: 'include' })
     .then(res => {
       if (!res.ok) return;
@@ -274,13 +273,7 @@
     })
     .catch(() => {});
 
-  // Every payment CTA on this page (credit bundles, pay-per-lead, subscription
-  // plans) needs a real Sieve account before Paystack can charge anything —
-  // checkout itself only happens inside the authenticated Billing page. So
-  // each button here checks whether the visitor is already signed in and
-  // either sends them straight to Billing pre-selected on the right tab/plan,
-  // or through Signup first, carrying that same selection along (signup.html
-  // forwards it to Billing once the account exists).
+ 
   document.querySelectorAll('[data-checkout]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();

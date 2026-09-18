@@ -22,6 +22,7 @@ app.use('/api/scorecards', require('./routes/scorecards'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/billing', require('./routes/billing'));
 app.use('/api/team', require('./routes/team'));
+app.use('/api/templates', require('./routes/templates'));
 
 // The static-file serving below (all three roots) is broad by necessity — the
 // marketing site's assets live loose at the repo root. That means it's
@@ -49,12 +50,20 @@ app.use('/take', express.static(path.join(__dirname, '..', 'take'), { dotfiles: 
 // being served, not just app/server specifically.
 app.use(express.static(path.join(__dirname, '..', '..'), { dotfiles: 'deny' }));
 
-// Catch-all error handler — without this, any route that calls next(err)
-// falls through to Express's own default error page, which is HTML, not
-// JSON. Every route in this app returns JSON, so its errors should too.
+// Single global error handler — every route's `catch (err) { next(err); }`
+// (and anything Express itself throws, e.g. express.json()'s own parse
+// errors) ends up here. Keeps the existing console.error behavior AND
+// persists a row to admin_error_log — see errorLog.js — so "a user says
+// they couldn't submit" can be checked against a real record. Awaited (errors
+// are not a hot path — a few extra milliseconds here is a fair trade for the
+// row reliably existing by the time the error response reaches the client),
+// but logError never throws itself, so this can't turn one error into two.
+// Must come after every other app.use() call above — an Express error
+// handler is only wired up correctly in that position.
 app.use((err, req, res, next) => {
-  console.error('[error]', err);
-  res.status(500).json({ error: 'Something went wrong on our end.' });
+  console.error(`[error] ${req.method} ${req.originalUrl}:`, err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || err.statusCode || 500).json({ error: 'Something went wrong. Please try again.' });
 });
 
 const PORT = process.env.PORT || 5500;

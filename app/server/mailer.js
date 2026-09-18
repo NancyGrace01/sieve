@@ -134,15 +134,6 @@ function leadResultsEmail({ to, businessName, personalization, reportUrl, pdfBuf
     <tr><td colspan="3" style="padding:0 0 14px;font-size:13px;color:#4A4E68;">${escapeHtml(c.message)}</td></tr>
   `).join('');
 
-  // const insightsBlock = personalization.answerInsights.length
-  //   ? `<h3 style="font-size:15px;color:#14162B;margin:24px 0 10px;">What we noticed in your answers</h3>` +
-  //     personalization.answerInsights.map(a => `
-  //       <p style="margin:0 0 4px;font-size:13px;color:#14162B;font-weight:700;">${escapeHtml(a.question)}</p>
-  //       <p style="margin:0 0 4px;font-size:12.5px;color:#8285A0;font-style:italic;">Your answer: ${escapeHtml(a.answer)}</p>
-  //       <p style="margin:0 0 16px;font-size:13px;color:#4A4E68;">${escapeHtml(a.insight)}</p>
-  //     `).join('')
-  //   : '';
-
   const recommendationHref = safeHref(personalization.recommendationUrl);
   const ctaBlock = personalization.recommendation
     ? `<div style="background:#F7E2D3;border-radius:10px;padding:18px 20px;margin-top:24px;">

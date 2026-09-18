@@ -119,7 +119,7 @@ test('a scorecard with no brand override falls back to the account\'s own busine
   // file — bump it to a paid plan here, the same direct-DB pattern used in
   // billing.test.js, purely so this test can create a second one.
   const { run } = require('../db');
-  await run("UPDATE users SET plan = 'business' WHERE email = ?", ['owner@test.com']);
+  await run("UPDATE users SET plan = 'business', has_ever_paid = true WHERE email = ?", ['owner@test.com']);
   const created = await ownerClient.post('/api/scorecards', { title: 'No Override Card' });
   await ownerClient.put(`/api/scorecards/${created.data.scorecard.id}`, {
     title: 'No Override Card',

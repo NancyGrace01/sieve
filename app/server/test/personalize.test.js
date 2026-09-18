@@ -64,16 +64,21 @@ test('every category gets a real, non-empty message when the owner wrote nothing
   });
 });
 
-test('weakest category is listed first, and reads as the priority; strongest reads as the standout', () => {
+test('category order stays fixed to the scorecard\'s own declared order, regardless of score', () => {
   const result = buildPersonalizedResult({
     scorecard: fakeScorecard(), lead: { firstName: 'Ada' }, answers: [0, 1],
     categoryScores: { fit: 100, timing: 0 }, overall: 50, tierLabel: 'Building the basics', leadId: 'lead-4',
   });
-  assert.equal(result.categoryNarratives[0].key, 'timing');
-  assert.equal(result.categoryNarratives[1].key, 'fit');
-  const timingWords = result.categoryNarratives[0].message.length;
-  const fitWords = result.categoryNarratives[1].message.length;
-  assert.ok(timingWords > 20 && fitWords > 20);
+  // fakeScorecard() declares categories as [fit, timing] — categoryNarratives
+  // preserves that fixed order (for a stable donut/legend/tabs UI), it does
+  // not resort by score. `ranked` (score order) only decides which category
+  // gets the weakest/strongest "role" framing inside its own message.
+  assert.equal(result.categoryNarratives[0].key, 'fit');
+  assert.equal(result.categoryNarratives[1].key, 'timing');
+
+  const weakest = result.categoryNarratives.find(c => c.key === 'timing'); // score 0
+  const strongest = result.categoryNarratives.find(c => c.key === 'fit'); // score 100
+  assert.ok(weakest.message.length > 20 && strongest.message.length > 20);
 });
 
 test('generated commentary genuinely varies across different respondents with the same score', () => {
